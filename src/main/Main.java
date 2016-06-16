@@ -26,10 +26,10 @@ public class Main {
     //0(rand)   1(active)
     private static final int OPC_APRENDIZADO = 1;
     private static final int MAX_EXECS = 1;
-    private static final boolean TEST_TRAIN_MANUAL = false;
+    private static final boolean INPUT_MANUAL = false;
 
     //opfsuper svmcross svmgrid opfsemi universvm
-    private static final String classificador = "opfsuper opfsemi";
+    private static final String classificador = "opfsuper";
 
     public static void main(String[] args) throws Exception {
 
@@ -39,11 +39,11 @@ public class Main {
 
         Instances z2 = null, z3 = null;
 
-        if (TEST_TRAIN_MANUAL == true) {
+        if (INPUT_MANUAL == true) {
             List<Instances> temp
                     = inputManual(
-                            "/home/guilherme/NetBeansProjects/MainProgram/execution_0-FronteirasRand/treino.arff",
-                            "/home/guilherme/NetBeansProjects/MainProgram/execution_0-FronteirasRand/teste.arff"
+                            "",//TREINO
+                            ""//TESTE
                     );
             z2 = temp.get(0);
             z3 = temp.get(1);
@@ -51,7 +51,7 @@ public class Main {
 
         for (int execucao = 0; execucao < MAX_EXECS; execucao++) {
 
-            if (TEST_TRAIN_MANUAL == false) {
+            if (INPUT_MANUAL == false) {
                 //split
                 //split("/home/guilherme/Experimento_CIARP/splits/prostate_TumorVSNormal_all.arff",
                 split("/home/guilherme/MineracaoDados/src/arffs/ecoli/ecoli_no_string_att_number_class.arff",

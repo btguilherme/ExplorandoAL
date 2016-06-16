@@ -7,6 +7,7 @@ package main;
 
 import classificar.ClassificadorOPF;
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
@@ -20,22 +21,22 @@ public class Movimentacao {
 
     public void mvExecucao(int execucao, String classifiers) {
 
-        if(classifiers.contains("opfsuper")){
+        if (classifiers.contains("opfsuper")) {
             movimenta(execucao, "opf_results");
         }
-        if(classifiers.contains("svmcross")){
+        if (classifiers.contains("svmcross")) {
             movimenta(execucao, "svm_results");
         }
-        if(classifiers.contains("svmgrid")){
+        if (classifiers.contains("svmgrid")) {
             movimenta(execucao, "grid_results");
         }
-        if(classifiers.contains("opfsemi")){
+        if (classifiers.contains("opfsemi")) {
             movimenta(execucao, "opfsemi_results");
         }
-        if(classifiers.contains("semil")){
+        if (classifiers.contains("semil")) {
             movimenta(execucao, "semil_results");
         }
-        if(classifiers.contains("universvm")){
+        if (classifiers.contains("universvm")) {
             movimenta(execucao, "universvm_results");
         }
     }
@@ -47,23 +48,23 @@ public class Movimentacao {
         }
     }
 
-    public void mv2TrashRaizes(){
-        String rm = "rm ./raizes* "+System.getProperty("user.dir");
+    public void mv2TrashRaizes() {
+        String rm = "rm -- " + System.getProperty("user.dir").concat(File.separator) + "raizes*";
         runCommand(rm);
     }
-    
+
     private void movimenta(int execucao, String folder) {
 
         String mkdir = "mkdir execution_" + execucao;
         runCommand(mkdir);
-        
+
         String cp = "cp " + System.getProperty("user.dir") + "/splited/teste.arff "
                 + System.getProperty("user.dir") + "/splited/treino.arff execution_" + execucao;
         runCommand(cp);
-        
+
         String mv = "mv " + folder + "/ execution_" + execucao + "/";
         runCommand(mv);
-        
+
         mkdir = "mkdir " + folder;
         runCommand(mkdir);
     }
