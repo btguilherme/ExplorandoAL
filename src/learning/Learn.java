@@ -347,18 +347,19 @@ public class Learn {
             classifyOPFSemi(iteration, time);
         }
         if (classifiers.contains("universvm")) {
-            classifyUniverSVM(raizes, time, iteration, numClassesConhecidas);
+            classifyUniverSVM(folds, time, iteration, numClassesConhecidas);
         }
 
     }
 
-    private void classifyUniverSVM(Instances raizes, double time, int iteration, int numClassesConhecidas) {
+    private void classifyUniverSVM(int folds, double time, int iteration,
+            int numClassesConhecidas) {
 
-        ClassificadorUniverSVM classificadorUniver = new ClassificadorUniverSVM();
+        ClassificadorUniverSVM classificadorUniver = new ClassificadorUniverSVM(folds);
         classificadorUniver.makeTheSteps("raizes" + iteration);
 
-//        String resultsUniverSVM = "train(s)\tclassify(s)\taccuracy(%)\tt_selection(s)\tZ1_length\tknow_classes\n";
-//        resultsUniverSVM = resultsUniverSVM.concat(dadosOutputUniverSVM());
+        String resultsUniverSVM = "train(s)\tclassify(s)\taccuracy(%)\tt_selection(s)\tZ1_length\tknow_classes\n";
+        resultsUniverSVM = resultsUniverSVM.concat(dadosOutputUniverSVM());
 //        //tempo treinamento, tempo classificação, accuracia, 
 //        resultsUniverSVM = resultsUniverSVM.concat(String.valueOf(time) + "\t");
 //        resultsUniverSVM = resultsUniverSVM.concat(raizes.numInstances() + "\t");
@@ -379,11 +380,9 @@ public class Learn {
         double t_ = 0.0;
 
         for (String line : lines) {
-            if (line.contains("mean accuracy")) {
-                acc = Double.parseDouble(line.split("=")[1]);
-            } else if (line.contains("<y>_train")) {
-                Double.parseDouble(line.split("=")[1]);
-            }
+            if (line.contains("Mean Cross Validation Accuracy:")) {
+                acc = Double.parseDouble(line.split(":")[1]);
+            } 
         }
 
         return "";

@@ -1,0 +1,26 @@
+# data set sizes
+training=44
+test=66
+unlabeled=68
+
+# training parameters
+c=1
+C=1
+z=0.647059
+t=0
+G=0.05
+S=0
+<y>_train=1.65909
+kernel=LINEAR
+r=0
+
+# algorithm parameters
+o=0
+optimizer=svqp2
+Max_alpha=0
+
+# training times
+time 1 =0.000133
+
+# accuracies
+mean accuracy=43.9394

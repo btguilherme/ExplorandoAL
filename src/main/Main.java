@@ -29,10 +29,10 @@ public class Main {
     private static final boolean INPUT_MANUAL = false;
 
     //opfsuper svmcross svmgrid opfsemi universvm
-    private static final String classificador = "opfsuper";
+    private static final String classificador = "universvm";
 
     public static void main(String[] args) throws Exception {
-
+        
         Movimentacao mov = new Movimentacao();
         IOArff io = new IOArff();
         Learn aprendizado = new Learn();
