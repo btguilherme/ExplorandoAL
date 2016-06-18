@@ -6,11 +6,8 @@
 package classificar;
 
 import arff2opf.Arff2opf;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import utils.RunCommand;
 
 /**
  *
@@ -37,7 +34,7 @@ public class ClassificadorOPF {
                 .concat(File.separator).concat("training"));
         String comando = "opf_train " + System.getProperty("user.dir")
                 .concat(File.separator).concat("training");
-        runCommand(comando);
+        RunCommand.runCommand(comando);
     }
     
     protected void classify(String testSetPath) {
@@ -46,36 +43,13 @@ public class ClassificadorOPF {
                 .concat(File.separator).concat("testing"));
         String comando = "opf_classify " + System.getProperty("user.dir")
                 .concat(File.separator).concat("testing");
-        runCommand(comando);
+        RunCommand.runCommand(comando);
     }
     
     protected void accuracy() {
         String comando = "opf_accuracy " + System.getProperty("user.dir")
                 .concat(File.separator).concat("testing");
-        runCommand(comando);
-    }
-    
-    protected void runCommand(String comando) {
-        try {
-            
-            Process p = Runtime.getRuntime().exec(comando);
-            
-            BufferedInputStream in = new BufferedInputStream(p.getInputStream());
-            byte[] bytes = new byte[4096];
-            while (in.read(bytes) != -1) {
-                System.err.println("waiting " + comando);
-            }
-            
-            p.waitFor();
-            
-            System.err.println("done  " + comando);
-            
-        } catch (IOException ex) {
-            System.out.println("Comando não encontrado");
-            System.exit(0);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(ClassificadorOPF.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        RunCommand.runCommand(comando);
     }
     
     protected void arff2ascii(String path, String opt) {
@@ -91,7 +65,7 @@ public class ClassificadorOPF {
     
     protected void ascii2dat(String path, String dat) {
         String comando = "txt2opf " + path + " " + dat;
-        runCommand(comando);
+        RunCommand.runCommand(comando);
     }
     
 }

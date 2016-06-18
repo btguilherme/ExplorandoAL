@@ -25,11 +25,11 @@ public class Main {
     private static final int FOLDS = 3;
     //0(rand)   1(active)
     private static final int OPC_APRENDIZADO = 1;
-    private static final int MAX_EXECS = 1;
+    private static final int MAX_EXECS = 2;
     private static final boolean INPUT_MANUAL = false;
 
     //opfsuper svmcross svmgrid opfsemi universvm
-    private static final String classificador = "universvm";
+    private static final String classificador = "svmcross opfsuper";
 
     public static void main(String[] args) throws Exception {
         
@@ -53,12 +53,13 @@ public class Main {
 
             if (INPUT_MANUAL == false) {
                 //split
-                //split("/home/guilherme/Experimento_CIARP/splits/prostate_TumorVSNormal_all.arff",
+                //split("/home/guilherme/MineracaoDados/src/arffs/100leaves/data_Mar_64.arff",
                 split("/home/guilherme/MineracaoDados/src/arffs/ecoli/ecoli_no_string_att_number_class.arff",
                         "80", "splited");
                 //carrega z2    
                 z2 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
                         concat("splited").concat(File.separator).concat("treino.arff"));
+                z2.setClassIndex(z2.numAttributes() - 1);
                 //carrega z3
                 z3 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
                         concat("splited").concat(File.separator).concat("teste.arff"));
@@ -68,7 +69,7 @@ public class Main {
             if (OPC_APRENDIZADO == 0) {
                 aprendizado.random(z2, z3, FOLDS, XNUMCLASSES, classificador);
             } else if (OPC_APRENDIZADO == 1) {
-                aprendizado.active(z2, z3, FOLDS, XNUMCLASSES, classificador, 2 * XNUMCLASSES);
+                aprendizado.active(z2, z3, FOLDS, XNUMCLASSES, classificador, z2.numClasses() * XNUMCLASSES);
             }
 
             mov.mvExecucao(execucao, classificador);

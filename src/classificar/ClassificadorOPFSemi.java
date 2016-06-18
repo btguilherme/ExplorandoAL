@@ -9,6 +9,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import splitter.Splitter;
+import utils.RunCommand;
 
 /**
  *
@@ -45,19 +46,19 @@ public class ClassificadorOPFSemi extends ClassificadorOPF {
         String comando = "opf_semi " + System.getProperty("user.dir").concat(File.separator).concat("Z1LINE ")
                 + System.getProperty("user.dir").concat(File.separator).concat("Z1DOUBLELINE");
 
-        runCommand(comando);
+        RunCommand.runCommand(comando);
     }
     
     protected void rename(String path) {
         String command = "cp " + path + "treino.arff " + path + "labeled.arff";
-        runCommand(command);
+        RunCommand.runCommand(command);
         command = "cp " + path + "teste.arff " + path + "unlabeled.arff";
-        runCommand(command);
+        RunCommand.runCommand(command);
 
         command = "rm " + path + "treino.arff";
-        runCommand(command);
+        RunCommand.runCommand(command);
         command = "rm " + path + "teste.arff";
-        runCommand(command);
+        RunCommand.runCommand(command);
     }
 
     protected void split(String path, String pctTreinamento, String folder) {
@@ -72,7 +73,7 @@ public class ClassificadorOPFSemi extends ClassificadorOPF {
     protected void mvSplit(List<String> files, String folder) {
         for (String file : files) {
             String command = "mv " + file + " " + folder;
-            runCommand(command);
+            RunCommand.runCommand(command);
         }
     }
 

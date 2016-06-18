@@ -5,13 +5,9 @@
  */
 package main;
 
-import classificar.ClassificadorOPF;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import utils.RunCommand;
 
 /**
  *
@@ -44,52 +40,33 @@ public class Movimentacao {
     public static void mvSplit(List<String> files, String folder) {
         for (String file : files) {
             String command = "cp " + file + " " + folder;
-            runCommand(command);
+            RunCommand.runCommand(command);
         }
     }
 
     public void mv2TrashRaizes() {
         String rm = "rm -- " + System.getProperty("user.dir").concat(File.separator) + "raizes*";
-        runCommand(rm);
+        RunCommand.runCommand(rm);
     }
 
     private void movimenta(int execucao, String folder) {
 
         String mkdir = "mkdir execution_" + execucao;
-        runCommand(mkdir);
+        if(!new File("execution_" + execucao).exists()){
+            RunCommand.runCommand(mkdir);
+        }
+        
+        
 
         String cp = "cp " + System.getProperty("user.dir") + "/splited/teste.arff "
                 + System.getProperty("user.dir") + "/splited/treino.arff execution_" + execucao;
-        runCommand(cp);
+        RunCommand.runCommand(cp);
 
         String mv = "mv " + folder + "/ execution_" + execucao + "/";
-        runCommand(mv);
+        RunCommand.runCommand(mv);
 
         mkdir = "mkdir " + folder;
-        runCommand(mkdir);
-    }
-
-    private static void runCommand(String comando) {
-        try {
-
-            Process p = Runtime.getRuntime().exec(comando);
-
-            BufferedInputStream in = new BufferedInputStream(p.getInputStream());
-            byte[] bytes = new byte[4096];
-            while (in.read(bytes) != -1) {
-                System.err.println("waiting " + comando);
-            }
-
-            p.waitFor();
-
-            System.err.println("done  " + comando);
-
-        } catch (IOException ex) {
-            System.out.println("Comando não encontrado");
-            System.exit(0);
-        } catch (InterruptedException ex) {
-            Logger.getLogger(ClassificadorOPF.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        RunCommand.runCommand(mkdir);
     }
 
 }

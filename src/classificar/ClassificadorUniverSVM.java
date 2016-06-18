@@ -6,6 +6,7 @@
 package classificar;
 
 import java.io.File;
+import utils.RunCommand;
 
 /**
  *
@@ -58,7 +59,7 @@ public class ClassificadorUniverSVM extends ClassificadorOPFSemi {
         //testa o modelo
         
         
-        runCommand(comando);
+        RunCommand.runCommand(comando);
     }
 
     @Override
@@ -68,6 +69,6 @@ public class ClassificadorUniverSVM extends ClassificadorOPFSemi {
 
     private void ascii2svm(String ascii, String svm) {
         String command = "opf2svm " + ascii + " " + svm;
-        runCommand(command);
+        RunCommand.runCommand(command);
     }
 }
