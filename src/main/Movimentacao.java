@@ -56,17 +56,27 @@ public class Movimentacao {
             RunCommand.runCommand(mkdir);
         }
         
+        exec("cp",
+                System.getProperty("user.dir") + "/splited/teste.arff",
+                System.getProperty("user.dir") + "/splited/treino.arff execution_" + execucao);
         
-
-        String cp = "cp " + System.getProperty("user.dir") + "/splited/teste.arff "
-                + System.getProperty("user.dir") + "/splited/treino.arff execution_" + execucao;
-        RunCommand.runCommand(cp);
-
-        String mv = "mv " + folder + "/ execution_" + execucao + "/";
-        RunCommand.runCommand(mv);
+        exec("mv",
+                folder + "/",
+                "execution_" + execucao + "/");
 
         mkdir = "mkdir " + folder;
         RunCommand.runCommand(mkdir);
+    }
+    
+    /**Executa um comando no terminal. Utilizar para comandos que utilizem dois 
+     *parâmetros de entrada (src e dst)
+     * 
+     * @param comando Comando que será utilizado, por exemplo: mv, cp, etc
+     * @param src Path do aquivo (txt, arff, etc)
+     * @param dst Path do diretório
+     */
+    public static void exec(String comando,String src, String dst){
+        RunCommand.runCommand(comando+" "+src+" "+dst);
     }
 
 }

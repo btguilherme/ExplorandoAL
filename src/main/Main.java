@@ -11,7 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import learning.Learn;
+import learning.LearnActive;
+import learning.LearnRandom;
 import splitter.Splitter;
 import weka.core.Instances;
 
@@ -23,9 +24,9 @@ public class Main {
 
     private static final int XNUMCLASSES = 2;
     private static final int FOLDS = 3;
-    //0(rand)   1(active)
-    private static final int OPC_APRENDIZADO = 1;
-    private static final int MAX_EXECS = 2;
+    //rand ou act
+    private static final String OPC_APRENDIZADO = "act";
+    private static final int MAX_EXECS = 1;
     private static final boolean INPUT_MANUAL = false;
 
     //opfsuper svmcross svmgrid opfsemi universvm
@@ -35,7 +36,6 @@ public class Main {
         
         Movimentacao mov = new Movimentacao();
         IOArff io = new IOArff();
-        Learn aprendizado = new Learn();
 
         Instances z2 = null, z3 = null;
 
@@ -65,12 +65,18 @@ public class Main {
                         concat("splited").concat(File.separator).concat("teste.arff"));
             }
 
-            //aprendizado    
-            if (OPC_APRENDIZADO == 0) {
-                aprendizado.random(z2, z3, FOLDS, XNUMCLASSES, classificador);
-            } else if (OPC_APRENDIZADO == 1) {
-                aprendizado.active(z2, z3, FOLDS, XNUMCLASSES, classificador, z2.numClasses() * XNUMCLASSES);
+            //aprendizado
+            switch(OPC_APRENDIZADO){
+                case "rand":
+                    new LearnRandom().random(z2, z3, FOLDS, XNUMCLASSES, classificador);
+                    break;
+                case "act":
+                    new LearnActive().active(z2, z3, FOLDS, XNUMCLASSES, classificador, z2.numClasses() * XNUMCLASSES);
+                    break;
             }
+            
+            
+            
 
             mov.mvExecucao(execucao, classificador);
             //mov.mv2TrashRaizes();

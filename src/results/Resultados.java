@@ -17,7 +17,7 @@ import java.util.List;
 public class Resultados {
 
     public static void main(String[] args) {
-        mediaDesvioPadrao("svmcross");
+        mediaDesvioPadrao("opfsuper");
     }
 
     public static void mediaDesvioPadrao(String classifierType) {
