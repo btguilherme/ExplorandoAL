@@ -23,7 +23,7 @@ import weka.core.Instances;
 public class Main {
 
     private static final int XNUMCLASSES = 2;
-    private static final int FOLDS = 3;
+    private static final int FOLDS = 8;
     //rand ou act
     private static final String OPC_APRENDIZADO = "act";
     private static final int MAX_EXECS = 1;
@@ -71,7 +71,8 @@ public class Main {
                     new LearnRandom().random(z2, z3, FOLDS, XNUMCLASSES, classificador);
                     break;
                 case "act":
-                    new LearnActive().active(z2, z3, FOLDS, XNUMCLASSES, classificador, z2.numClasses() * XNUMCLASSES);
+                    int kVizinhos = z2.numClasses() * XNUMCLASSES;
+                    new LearnActive().active(z2, z3, FOLDS, XNUMCLASSES, classificador, kVizinhos);
                     break;
             }
             

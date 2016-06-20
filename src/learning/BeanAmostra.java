@@ -13,12 +13,14 @@ import weka.core.Instance;
  */
 public class BeanAmostra {
     private Instance amostra;
-    private int clusterPredito;
+    //private int clusterPredito;
+    private double clusterPredito;
     private int indiceZ2;
     
     public BeanAmostra(){}
     
-    public BeanAmostra(Instance amostra, int clusterPredito, int indiceZ2){
+    //public BeanAmostra(Instance amostra, int clusterPredito, int indiceZ2){
+    public BeanAmostra(Instance amostra, double clusterPredito, int indiceZ2){
         this.amostra = amostra;
         this.clusterPredito = clusterPredito;
         this.indiceZ2 = indiceZ2;
@@ -31,8 +33,12 @@ public class BeanAmostra {
     public void setAmostra(Instance amostra) {
         this.amostra = amostra;
     }
-
-    public int getClusterPredito() {
+    
+//    public int getClusterPredito() {
+//        return clusterPredito;
+//    }
+    
+    public double getClusterPredito() {
         return clusterPredito;
     }
 

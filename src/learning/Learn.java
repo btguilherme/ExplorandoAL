@@ -14,7 +14,9 @@ import io.IOText;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import main.Movimentacao;
@@ -27,54 +29,57 @@ import weka.core.Instances;
 public class Learn {
 
     protected void classify(String classifiers, int iteration, Instances raizes,
-            Instances z3, int folds, double time, int numClassesConhecidas) {
+            Instances z3, int folds, double time, int numClassesConhecidas, int numCorrecoes) {
         //opfsuper svmcross svmgrid opfsemi universvm
         if (classifiers.contains("opfsuper")) {
-            classifyOPF(iteration, time);
+            classifyOPF(iteration, time, numCorrecoes);
         }
         if (classifiers.contains("svmcross")) {
-            classifySVM(raizes, z3, folds, time, iteration, numClassesConhecidas);
+            classifySVM(raizes, z3, folds, time, iteration, numClassesConhecidas, numCorrecoes);
         }
         if (classifiers.contains("svmgrid")) {
-            classifyGrid(raizes, z3, folds, time, iteration, numClassesConhecidas);
+            classifyGrid(raizes, z3, folds, time, iteration, numClassesConhecidas, numCorrecoes);
         }
         if (classifiers.contains("opfsemi")) {
-            classifyOPFSemi(iteration, time);
+            classifyOPFSemi(iteration, time, numCorrecoes);
         }
         if (classifiers.contains("universvm")) {
-            classifyUniverSVM(folds, time, iteration, numClassesConhecidas);
+            classifyUniverSVM(folds, time, iteration, numClassesConhecidas, numCorrecoes);
         }
     }
 
-    private void classifyOPF(int iteration, double time) {
+    private void classifyOPF(int iteration, double time, int numCorrecoes) {
         IOText io = new IOText();
         ClassificadorOPF classificadorOPF = new ClassificadorOPF();
         classificadorOPF.makeTheSteps("raizes" + iteration);
         List<String> tempOPF = new ArrayList<>();
-        tempOPF.add(String.valueOf(time));
-        io.save(System.getProperty("user.dir").concat(File.separator), "selectTime", tempOPF);
+        tempOPF.add("t_select\tn_corrections");
+        tempOPF.add(String.valueOf(time)+"\t"+String.valueOf(numCorrecoes));
+        io.save(System.getProperty("user.dir").concat(File.separator), "OutrasInfos", tempOPF);
         moveFilesOPF(iteration);
     }
 
-    private void classifyOPFSemi(int iteration, double time) {
+    private void classifyOPFSemi(int iteration, double time, int numCorrecoes) {
         IOText io = new IOText();
         ClassificadorOPFSemi classificadorOPFSemi = new ClassificadorOPFSemi();
         classificadorOPFSemi.makeTheSteps("raizes" + iteration);
         List<String> tempOPF = new ArrayList<>();
-        tempOPF.add(String.valueOf(time));
-        io.save(System.getProperty("user.dir").concat(File.separator), "selectTime", tempOPF);
+        tempOPF.add("t_select\tn_corrections");
+        tempOPF.add(String.valueOf(time)+"\t"+String.valueOf(numCorrecoes));
+        io.save(System.getProperty("user.dir").concat(File.separator), "OutrasInfos", tempOPF);
         moveFilesOPFSemi(iteration);
     }
 
     private void classifySVM(Instances raizes, Instances z3, int folds,
-            double time, int iteration, int numClassesConhecidas) {
+            double time, int iteration, int numClassesConhecidas, int numCorrecoes) {
         IOText ioText = new IOText();
         ClassificadorSVM classificadorSVM = new ClassificadorSVM();
-        String resultsSVM = "train(s)\tclassify(s)\taccuracy(%)\tt_selection(s)\tZ1_length\tknow_classes\n";
+        String resultsSVM = "train(s)\tclassify(s)\taccuracy(%)\tt_selection(s)\tZ1_length\tknow_classes\tn_corrections\n";
         resultsSVM = resultsSVM.concat(classificadorSVM.makeTheSteps(raizes, z3, folds));
         resultsSVM = resultsSVM.concat(String.valueOf(time) + "\t");
         resultsSVM = resultsSVM.concat(raizes.numInstances() + "\t");
         resultsSVM = resultsSVM.concat(numClassesConhecidas + "\t");
+        resultsSVM = resultsSVM.concat(numCorrecoes + "\t");
         List<String> tempSVM = new ArrayList<>();
         tempSVM.add(resultsSVM);
         ioText.save(System.getProperty("user.dir").concat(File.separator), "output", tempSVM);
@@ -82,14 +87,15 @@ public class Learn {
     }
 
     private void classifyGrid(Instances raizes, Instances z3, int folds,
-            double time, int iteration, int numClassesConhecidas) {
+            double time, int iteration, int numClassesConhecidas, int numCorrecoes) {
         IOText ioText = new IOText();
         ClassificadorSVMGridSearch classificadorGrid = new ClassificadorSVMGridSearch();
-        String resultsGrid = "train(s)\tclassify(s)\taccuracy(%)\tt_selection(s)\tZ1_length\tknow_classes\n";
+        String resultsGrid = "train(s)\tclassify(s)\taccuracy(%)\tt_selection(s)\tZ1_length\tknow_classes\tn_corrections\n";
         resultsGrid = resultsGrid.concat(classificadorGrid.makeTheSteps(raizes, z3, folds));
         resultsGrid = resultsGrid.concat(String.valueOf(time) + "\t");
         resultsGrid = resultsGrid.concat(raizes.numInstances() + "\t");
         resultsGrid = resultsGrid.concat(numClassesConhecidas + "\t");
+        resultsGrid = resultsGrid.concat(numCorrecoes + "\t");
         List<String> tempGrid = new ArrayList<>();
         tempGrid.add(resultsGrid);
         ioText.save(System.getProperty("user.dir").concat(File.separator), "output", tempGrid);
@@ -97,17 +103,18 @@ public class Learn {
     }
 
     private void classifyUniverSVM(int folds, double time, int iteration,
-            int numClassesConhecidas) {
+            int numClassesConhecidas, int numCorrecoes) {
 
         ClassificadorUniverSVM classificadorUniver = new ClassificadorUniverSVM(folds);
         classificadorUniver.makeTheSteps("raizes" + iteration);
 
-        String resultsUniverSVM = "train(s)\tclassify(s)\taccuracy(%)\tt_selection(s)\tZ1_length\tknow_classes\n";
+        String resultsUniverSVM = "train(s)\tclassify(s)\taccuracy(%)\tt_selection(s)\tZ1_length\tknow_classes\tn_corrections\n";
         resultsUniverSVM = resultsUniverSVM.concat(dadosOutputUniverSVM());
 //        //tempo treinamento, tempo classificação, accuracia, 
 //        resultsUniverSVM = resultsUniverSVM.concat(String.valueOf(time) + "\t");
 //        resultsUniverSVM = resultsUniverSVM.concat(raizes.numInstances() + "\t");
 //        resultsUniverSVM = resultsUniverSVM.concat(numClassesConhecidas + "\t");
+        //        resultsUniverSVM = resultsUniverSVM.concat(numCorrecoes + "\t");
 //        List<String> tempSVM = new ArrayList<>();
 //        tempSVM.add(resultsUniverSVM);
 //        ioText.save(System.getProperty("user.dir").concat(File.separator), "output", tempSVM);
@@ -152,7 +159,7 @@ public class Learn {
         Movimentacao.exec("mv", preSrc + "Z1LINE", dst);
         Movimentacao.exec("mv", preSrc + "Z1LINE.out", dst);
         Movimentacao.exec("mv", preSrc + "Z1LINE.time", dst);
-        Movimentacao.exec("mv", preSrc + "selectTime.txt", dst);
+        Movimentacao.exec("mv", preSrc + "OutrasInfos.txt", dst);
 
         Movimentacao.exec("cp", preSrc + "raizes" + iteration + ".arff", dst);
     }
@@ -177,7 +184,7 @@ public class Learn {
         Movimentacao.exec("mv", preSrc + "training", dst);
         Movimentacao.exec("mv", preSrc + "training.out", dst);
         Movimentacao.exec("mv", preSrc + "training.time", dst);
-        Movimentacao.exec("mv", preSrc + "selectTime.txt", dst);
+        Movimentacao.exec("mv", preSrc + "OutrasInfos.txt", dst);
 
         Movimentacao.exec("cp", preSrc + "raizes" + iteration + ".arff", dst);
     }
@@ -219,5 +226,15 @@ public class Learn {
         Movimentacao.exec("mv", preSrc + "unlabeled.svm.txt", dst);
 
         Movimentacao.exec("cp", preSrc + "raizes" + iteration + ".arff", dst);
+    }
+    
+    public int numClassesConhecidas(Instances raizes) {
+        Set<Integer> classes = new HashSet<>();
+        for (int i = 0; i < raizes.numInstances(); i++) {
+            String inst = raizes.instance(i).toString();
+            int value = Integer.valueOf(inst.split(",")[inst.split(",").length - 1]);
+            classes.add(value);
+        }
+        return classes.size();
     }
 }

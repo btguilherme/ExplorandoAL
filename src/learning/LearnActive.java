@@ -10,15 +10,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
 import weka.classifiers.meta.ClassificationViaClustering;
-import weka.clusterers.ClusterEvaluation;
 import weka.clusterers.SimpleKMeans;
 import weka.core.EuclideanDistance;
 import weka.core.Instance;
@@ -30,7 +27,7 @@ import weka.filters.Filter;
  *
  * @author guilherme
  */
-public class LearnActive extends Learn implements ILearn {
+public class LearnActive extends Learn {
 
     public void active(Instances z2, Instances z3, int folds, int xNumClasses,
             String classifiers, int kVizinhos) {
@@ -42,9 +39,10 @@ public class LearnActive extends Learn implements ILearn {
 
         List<Object> temp = criaCluster(numInstancias, z2);
         SimpleKMeans clusterer = (SimpleKMeans) temp.get(0);
-        //indice é o valor do cluster, e o valor em cada posicao
-        //representa a classe
-        List<Double> dicionario = (List<Double>) temp.get(1);
+        ClassificationViaClustering cvc = (ClassificationViaClustering) temp.get(1);
+        int classesConhecidas = (int) temp.get(2);
+        //key = classe     value = cluster
+        Map dicionario = (Map) temp.get(3);
 
         Instances centroids = clusterer.getClusterCentroids();
         Instances raizes = raizesProximasAoCentroide(centroids, z2);
@@ -58,6 +56,9 @@ public class LearnActive extends Learn implements ILearn {
 
         int numAmostrasZ2 = z2.numInstances();
 
+        Instances amostrasCorrigidas = new Instances(z2);
+        amostrasCorrigidas.delete();
+
         do {
             /*
              primeira iteracao (iteration == 0) é utilizada apenas as amostras raizes
@@ -65,12 +66,12 @@ public class LearnActive extends Learn implements ILearn {
              para demais iteracoes, amostras são selecionadas do conjunto de amostras de fronteira
              */
             if (iteration == 1) {
-                //fronteirasTemp sem classe
-                fronteirasTemp = selecionaAmostrasFronteira(z2, clusterer, kVizinhos);
+                fronteirasTemp = selecionaAmostrasFronteira(z2, clusterer, kVizinhos, cvc);
             }
 
             long init = System.nanoTime();
 
+            int numCorrecoes = 0;
             if (iteration != 0) {
                 int numFronteira = clusterer.getNumClusters();//2xnclass
 
@@ -82,32 +83,34 @@ public class LearnActive extends Learn implements ILearn {
 
                 temp = selecionaAmostrasDaFronteira(z2, numFronteira, fronteirasTemp);
                 z2 = (Instances) temp.get(0);
-
                 Instances amostrasFronteira = (Instances) temp.get(1);
                 fronteirasTemp = (List<BeanAmostra>) temp.get(2);
-                Instances z2ExcluidosComClasse = (Instances) temp.get(3);
 
-                temp = corrigeRotulos(amostrasFronteira, z2ExcluidosComClasse, clusterer, dicionario);
+                temp = corrigeRotulos(amostrasFronteira, amostrasCorrigidas, cvc, dicionario);
+                amostrasCorrigidas = (Instances) temp.get(0);
 
                 if (amostrasFronteira.numInstances() != 0) {
-                    Instances novasAmostrasRaizes = (Instances) temp.get(0);
-                    for (int i = 0; i < novasAmostrasRaizes.numInstances(); i++) {
-                        raizes.add(novasAmostrasRaizes.instance(i));
+                    for (int i = 0; i < amostrasFronteira.numInstances(); i++) {
+                        raizes.add(amostrasFronteira.instance(i));
                     }
                 }
-
-                int numCorrecoes = (int) temp.get(1);
-                JOptionPane.showMessageDialog(null, numCorrecoes);
+                numCorrecoes = (int) temp.get(1);
             }
+
             long end = System.nanoTime();
             long diff = end - init;
             double time = (diff / 1000000000.0);//tempo de selecao
 
-            int numClassesConhecidas = numClassesConhecidas(dicionario, raizes);
+            int numClassesConhecidas;
+            if (iteration == 0) {
+                numClassesConhecidas = classesConhecidas;
+            } else {
+                numClassesConhecidas = numClassesConhecidas(raizes);
+            }
 
             ioArff.saveArffFile(raizes, "raizes" + iteration);
 
-            classify(classifiers, iteration, raizes, z3, folds, time, numClassesConhecidas);
+            classify(classifiers, iteration, raizes, z3, folds, time, numClassesConhecidas, numCorrecoes);
 
             if (iteration != 0 && (fronteirasTemp.size() - numInstancias) < numInstancias) {
                 break;
@@ -116,66 +119,59 @@ public class LearnActive extends Learn implements ILearn {
             iteration++;
 
         } while (true);
-
     }
 
     private List<Object> criaCluster(int size, Instances z2) {
-        
+
         Instances z2SemClasse = removeAtributoClasse(z2);
 
         SimpleKMeans clusterer = new SimpleKMeans();
         clusterer.setSeed(10);
         clusterer.setPreserveInstancesOrder(true);
         try {
-            clusterer.setNumClusters(size);
+            clusterer.setNumClusters(size / 2);
             clusterer.setMaxIterations(500);
-            //clusterer.buildClusterer(z2SemClasse);
+            clusterer.buildClusterer(z2SemClasse);
         } catch (Exception ex) {
             Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        
+
         ClassificationViaClustering cvc = new ClassificationViaClustering();
         cvc.setClusterer(clusterer);
-        
+
         try {
             cvc.buildClassifier(z2);
         } catch (Exception ex) {
             Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        System.out.println(cvc.toString());
-        
-        System.exit(0);
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
-        ClusterEvaluation eval = new ClusterEvaluation();
-        eval.setClusterer(clusterer);
-
-        try {
-            eval.evaluateClusterer(z2);
-        } catch (Exception ex) {
-            Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+        //inicio classes conhecidas (com o clustering apenas)
+        String classesClusters = cvc.toString().split("Classes to clusters mapping:\n")[1];
+        String[] linhas = classesClusters.split("\n");
+        int contClassesConhecidas = 0;
+        for (int i = 0; i < linhas.length; i++) {
+            if (linhas[i].split(":")[1].contains("no cluster")) {
+                //
+            } else {
+                contClassesConhecidas++;
+            }
         }
+        //fim classes conhecidas (com o clustering apenas)
 
-        int[] ass = eval.getClassesToClusters();
-        List<Double> assignments = new ArrayList<>();
-        for (int i = 0; i < ass.length; i++) {
-            assignments.add(Double.valueOf(ass[i]));
-        }
+        Enumeration classes = z2.attribute(z2.classIndex()).enumerateValues();
+        Map<Integer, Double> dic = new HashMap();
+        int contador = 0;
+        do {
+            //key = classe     value = cluster
+            dic.put(Integer.valueOf((String) classes.nextElement()), (double) contador);
+            contador++;
+        } while (classes.hasMoreElements());
 
         List<Object> ret = new ArrayList<>();
         ret.add(clusterer);
-        ret.add(assignments);
+        ret.add(cvc);
+        ret.add(contClassesConhecidas);//int
+        ret.add(dic);
 
         return ret;
     }
@@ -273,41 +269,51 @@ public class LearnActive extends Learn implements ILearn {
         return retorno;
     }
 
-    private List<Object> corrigeRotulos(Instances raizesSemClasse, Instances raizesComClasse,
-            SimpleKMeans clusterer, List<Double> dicionario) {
+    private List<Object> corrigeRotulos(Instances raizes, Instances amostrasCorrigidas,
+            ClassificationViaClustering cvc, Map dicionario) {
 
         int corrigiu = 0;
 
-        for (int i = 0; i < raizesSemClasse.numInstances(); i++) {
-            Instance raizSemClasse = raizesSemClasse.instance(i);
-            int clusterRaizSemClasse = 0;
+        for (int i = 0; i < raizes.numInstances(); i++) {
+            Instance raiz = raizes.instance(i);
+            double clusterRaizDado = 0;
 
             try {
-                clusterRaizSemClasse = clusterer.clusterInstance(raizSemClasse);
+                clusterRaizDado = cvc.classifyInstance(raiz);
             } catch (Exception ex) {
                 Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
             }
 
-            for (int j = 0; j < raizesComClasse.numInstances(); j++) {
-                Instance raizComClasse = raizesComClasse.instance(j);
+            int classeReal = Integer.valueOf(raiz.stringValue(raiz.classIndex()));
 
-                if (raizComClasse.toString().contains(raizSemClasse.toString())) {
-                    double classeRaizComClasse = raizComClasse.classValue();
-                    int clusterRaizComClasse = dicionario.indexOf(classeRaizComClasse);
-                    if (clusterRaizComClasse != clusterRaizSemClasse) {
-                        //não faz a correção em si. Apenas conta a quantidade de
-                        //amostras que estão em diferentes clusters
-                        //e retorna as amostras com classe
-                        
+            double clusterRaizOriginal;
+            //key = classe     value = cluster
+            if (dicionario.containsKey(classeReal)) {//devolver o cluster
+                clusterRaizOriginal = (double) dicionario.get(classeReal);
+                if (clusterRaizDado != clusterRaizOriginal) {
+                    if (amostrasCorrigidas.numInstances() == 0) {
+                        amostrasCorrigidas.add(raiz);
                         corrigiu++;
+                    } else {
+                        boolean amostraJaCorrigida = false;
+                        for (int j = 0; j < amostrasCorrigidas.numInstances(); j++) {
+                            String amostraCorrigida = amostrasCorrigidas.instance(j).toString();
+                            String amostraACorrigir = raiz.toString();
+                            if (amostraCorrigida.contains(amostraACorrigir)){
+                                amostraJaCorrigida = true;
+                            }
+                        }
+                        if (!amostraJaCorrigida) {
+                            amostrasCorrigidas.add(raiz);
+                            corrigiu++;
+                        }
                     }
-                    break;
                 }
             }
         }
 
         List<Object> retorno = new ArrayList<>();
-        retorno.add(raizesComClasse);
+        retorno.add(amostrasCorrigidas);
         retorno.add(corrigiu);
 
         return retorno;
@@ -317,8 +323,7 @@ public class LearnActive extends Learn implements ILearn {
             List<BeanAmostra> fronteirasTemp) {
 
         List<Integer> indicesConjZ2 = new ArrayList<>();
-        Instances z2SemClasses = removeAtributoClasse(z2);
-        Instances amostrasFronteira = new Instances(z2SemClasses, numFronteira);
+        Instances amostrasFronteira = new Instances(z2, numFronteira);
         for (int i = 0; i < numFronteira; i++) {
             BeanAmostra ba = fronteirasTemp.get(i);
             Instance sampleT = ba.getAmostra();
@@ -342,7 +347,6 @@ public class LearnActive extends Learn implements ILearn {
         retorno.add(z2);
         retorno.add(amostrasFronteira);
         retorno.add(fronteirasTemp);
-        retorno.add(z2ExcluidosComClasse);
 
         return retorno;
     }
@@ -369,34 +373,87 @@ public class LearnActive extends Learn implements ILearn {
         return temp;
     }
 
-    private List<BeanAmostra> selecionaAmostrasFronteira(Instances z2, SimpleKMeans clusterer, int kVizinhos) {
+    private List<BeanAmostra> selecionaAmostrasFronteira(Instances z2,
+            SimpleKMeans clusterer, int kVizinhos, ClassificationViaClustering cvc) {
 
-        Instances z2SemClasse = removeAtributoClasse(z2);
-
+//        Instances z2SemClasse = removeAtributoClasse(z2);
+//        
+//        List<BeanAmostra> fronteirasTemp = new ArrayList<>();
+//        List<BeanAmostra> amostrasT = new ArrayList<>();
+//        List<BeanAmostra> vizinhosT = new ArrayList<>();
+//
+//        for (int i = 0; i < z2SemClasse.numInstances(); i++) {
+//            Instance t = z2SemClasse.instance(i);
+//            int clusterT = 0;
+//            try {
+//                clusterT = clusterer.clusterInstance(t);
+//            } catch (Exception ex) {
+//                Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//
+//            KDTree tree = new KDTree();
+//            EuclideanDistance df = new EuclideanDistance(z2SemClasse);
+//            df.setDontNormalize(true);
+//            try {
+//                tree.setInstances(z2SemClasse);
+//                tree.setDistanceFunction(df);
+//            } catch (Exception ex) {
+//                Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//
+//            Instances vizinhos = null; //aqui não tem classe
+//            try {
+//                vizinhos = tree.kNearestNeighbours(t, kVizinhos);
+//                vizinhos.setClassIndex(vizinhos.numAttributes() - 1);
+//            } catch (Exception ex) {
+//                Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//
+//            for (int j = 0; j < vizinhos.numInstances(); j++) {
+//                int clusterV = 0;
+//                try {
+//                    clusterV = clusterer.clusterInstance(vizinhos.instance(j));
+//                } catch (Exception ex) {
+//                    Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+//
+//                if (clusterT != clusterV) {//amostra de fronteira
+//
+//                    BeanAmostra amostraT = new BeanAmostra(z2SemClasse.instance(i), clusterT, i);
+//                    BeanAmostra vizinhoT = new BeanAmostra(vizinhos.instance(j), 0, j);
+//
+//                    amostrasT.add(amostraT);
+//                    vizinhosT.add(vizinhoT);
+//
+//                    break;
+//                }
+//            }
+//        }
         List<BeanAmostra> fronteirasTemp = new ArrayList<>();
         List<BeanAmostra> amostrasT = new ArrayList<>();
         List<BeanAmostra> vizinhosT = new ArrayList<>();
 
-        for (int i = 0; i < z2SemClasse.numInstances(); i++) {
-            Instance t = z2SemClasse.instance(i);
-            int clusterT = 0;
+        for (int i = 0; i < z2.numInstances(); i++) {
+            Instance t = z2.instance(i);
+
+            double clusterT = 0;
             try {
-                clusterT = clusterer.clusterInstance(t);
+                clusterT = cvc.classifyInstance(t);
             } catch (Exception ex) {
-                Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
             }
 
             KDTree tree = new KDTree();
-            EuclideanDistance df = new EuclideanDistance(z2SemClasse);
+            EuclideanDistance df = new EuclideanDistance(z2);
             df.setDontNormalize(true);
             try {
-                tree.setInstances(z2SemClasse);
+                tree.setInstances(z2);
                 tree.setDistanceFunction(df);
             } catch (Exception ex) {
                 Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
             }
 
-            Instances vizinhos = null; //aqui não tem classe
+            Instances vizinhos = null;
             try {
                 vizinhos = tree.kNearestNeighbours(t, kVizinhos);
                 vizinhos.setClassIndex(vizinhos.numAttributes() - 1);
@@ -405,16 +462,17 @@ public class LearnActive extends Learn implements ILearn {
             }
 
             for (int j = 0; j < vizinhos.numInstances(); j++) {
-                int clusterV = 0;
+
+                double clusterV = 0;
                 try {
-                    clusterV = clusterer.clusterInstance(vizinhos.instance(j));
+                    clusterV = cvc.classifyInstance(vizinhos.instance(j));
                 } catch (Exception ex) {
-                    Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
                 if (clusterT != clusterV) {//amostra de fronteira
 
-                    BeanAmostra amostraT = new BeanAmostra(z2SemClasse.instance(i), clusterT, i);
+                    BeanAmostra amostraT = new BeanAmostra(z2.instance(i), clusterT, i);
                     BeanAmostra vizinhoT = new BeanAmostra(vizinhos.instance(j), 0, j);
 
                     amostrasT.add(amostraT);
@@ -428,6 +486,7 @@ public class LearnActive extends Learn implements ILearn {
         //ordenar da menor distancia para a maior
         //amostras em fronteirasTemp não tem classe
         fronteirasTemp = ordenaAmostrasFronteira(amostrasT, vizinhosT, z2);
+
         return fronteirasTemp;
     }
 
@@ -444,36 +503,6 @@ public class LearnActive extends Learn implements ILearn {
         }
 
         return dataClusterer;
-    }
-
-    @Override
-    public int numClassesConhecidas(List<Double> dicionario, Instances raizes) {
-        
-        Enumeration totalClasses = raizes.classAttribute().enumerateValues();
-        int contClassesConhecidas = 0;
-        
-        List<Integer> classesConhecidas = new ArrayList<>();
-        
-        for (int i = 0; i < raizes.numInstances(); i++) {
-            if(!classesConhecidas.contains(Integer.valueOf(raizes.instance(i).toString(raizes.classIndex())))){
-                classesConhecidas.add(Integer.valueOf(raizes.instance(i).toString(raizes.classIndex())));
-            }
-        }
-        
-        do{
-            int total =  Integer.valueOf((String)totalClasses.nextElement());
-            if(classesConhecidas.contains(total)){
-                contClassesConhecidas++;
-            }
-            
-        }while(totalClasses.hasMoreElements());
-        
-        return contClassesConhecidas;
-    }
-
-    @Override
-    public int numClassesConhecidas(Instances raizes) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

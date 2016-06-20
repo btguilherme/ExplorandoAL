@@ -95,7 +95,7 @@ public class Resultados {
                             acc = Double.valueOf(io.open(pathIt + File.separator + "testing.acc").get(0));
                             t_test = Double.valueOf(io.open(pathIt + File.separator + "testing.time").get(0));
                             t_train = Double.valueOf(io.open(pathIt + File.separator + trainingFileName).get(0));
-                            t_selec = Double.valueOf(io.open(pathIt + File.separator + "selectTime.txt").get(0));
+                            t_selec = Double.valueOf(io.open(pathIt + File.separator + "OutrasInfos.txt").get(1).split("\t")[0]);
                         }
 
                         accsIt.add(acc);

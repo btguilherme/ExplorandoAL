@@ -6,9 +6,7 @@
 package learning;
 
 import io.IOArff;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import raizes.Raizes;
 import weka.core.Instances;
 
@@ -16,7 +14,7 @@ import weka.core.Instances;
  *
  * @author guilherme
  */
-public class LearnRandom extends Learn implements ILearn {
+public class LearnRandom extends Learn {
 
     public void random(Instances z2, Instances z3, int folds,
             int xNumClasses, String classifiers) {
@@ -51,7 +49,7 @@ public class LearnRandom extends Learn implements ILearn {
 
             ioArff.saveArffFile(raizes, "raizes" + iteration);
 
-            classify(classifiers, iteration, raizes, z3, folds, time, numClassesConhecidas);
+            classify(classifiers, iteration, raizes, z3, folds, time, numClassesConhecidas, 0);
 
             iteration++;
 
@@ -62,19 +60,4 @@ public class LearnRandom extends Learn implements ILearn {
         } while (true);
     }
 
-    @Override
-    public int numClassesConhecidas(Instances raizes) {
-        Set<Integer> classes = new HashSet<>();
-        for (int i = 0; i < raizes.numInstances(); i++) {
-            String inst = raizes.instance(i).toString();
-            int value = Integer.valueOf(inst.split(",")[inst.split(",").length - 1]);
-            classes.add(value);
-        }
-        return classes.size();
-    }
-
-    @Override
-    public int numClassesConhecidas(List<Double> dicionario, Instances raizes) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 }
