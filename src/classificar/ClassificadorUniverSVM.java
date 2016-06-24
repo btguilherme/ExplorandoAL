@@ -5,7 +5,9 @@
  */
 package classificar;
 
+import io.IOText;
 import java.io.File;
+import java.util.List;
 import utils.RunCommand;
 
 /**
@@ -42,6 +44,18 @@ public class ClassificadorUniverSVM extends ClassificadorOPFSemi {
         ascii2svm(System.getProperty("user.dir").concat(File.separator).concat("splitSemi")
                 .concat(File.separator).concat("unlabeled.arff_unlabeled.opf"), System.getProperty("user.dir")
                 .concat(File.separator).concat("unlabeled.svm"));
+
+//        String comando = "universvm -u " + System.getProperty("user.dir")
+//                .concat(File.separator).concat("unlabeled.svm.txt") + " " + System.getProperty("user.dir")
+//                .concat(File.separator).concat("labeled.svm.txt") + " model";
+//
+//        long init = System.nanoTime();
+//        RunCommand.runCommand(comando);
+//        long end = System.nanoTime();
+//        long diff = end - init;
+//        double time = (diff / 1000000000.0);//tempo de selecao
+//        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+//                "training", String.valueOf(time));
     }
 
     @Override
@@ -50,21 +64,39 @@ public class ClassificadorUniverSVM extends ClassificadorOPFSemi {
 
         ascii2svm(testSetPath + "_test.opf", testSetPath + "_test.svm");
 
-        String comando = "universvm -v " + this.folds + " -u unlabeled.svm.txt -f "
-                + "outputUniverSVM.txt -T " + testSetPath + "_test.svm.txt labeled.svm.txt";
+        //String comando = "universvm -F model "+testSetPath + "_test.svm.txt";
+        String comando = "universvm -v 10 -f outputUniverSVM.txt -u " + System.getProperty("user.dir")
+                .concat(File.separator).concat("unlabeled.svm.txt") + " -T " 
+                + testSetPath + "_test.svm.txt " + System.getProperty("user.dir")
+                .concat(File.separator).concat("labeled.svm.txt");
 
-        //dividir funcao para treinar e dps classificar
-        //treina o modelo
-        //universvm -v 10 -u unlabeled.svm.txt labeled.svm.txt model
-        //testa o modelo
-        
-        
+//        String comando = "universvm -T " + testSetPath + "_test.svm.txt"
+//                + " -f outputUniverSVM.txt " + System.getProperty("user.dir")
+//                .concat(File.separator).concat("labeled.svm.txt") + " -F model";
+        long init = System.nanoTime();
         RunCommand.runCommand(comando);
+        long end = System.nanoTime();
+        long diff = end - init;
+        double time = (diff / 1000000000.0);//tempo de selecao
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "testing", String.valueOf(time));
     }
 
     @Override
     protected void accuracy() {
+        IOText io = new IOText();
+        List<String> file = io.open(System.getProperty("user.dir").
+                concat(File.separator).concat("outputUniverSVM.txt"));
 
+        String acc = null;
+        for (String line : file) {
+            if (line.contains("mean accuracy")) {
+                acc = line.split("=")[1];
+                break;
+            }
+        }
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "acuracy", acc);
     }
 
     private void ascii2svm(String ascii, String svm) {

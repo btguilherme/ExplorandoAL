@@ -6,7 +6,14 @@
 package main;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import utils.RunCommand;
 
 /**
@@ -39,27 +46,23 @@ public class Movimentacao {
 
     public static void mvSplit(List<String> files, String folder) {
         for (String file : files) {
-            String command = "cp " + file + " " + folder;
-            RunCommand.runCommand(command);
+            //String command = "cp " + file + " " + folder;
+            //RunCommand.runCommand(command);
+            RunCommand.runCommand("cp", file, folder);
         }
-    }
-
-    public void mv2TrashRaizes() {
-        String rm = "rm -- " + System.getProperty("user.dir").concat(File.separator) + "raizes*";
-        RunCommand.runCommand(rm);
     }
 
     private void movimenta(int execucao, String folder) {
 
         String mkdir = "mkdir execution_" + execucao;
-        if(!new File("execution_" + execucao).exists()){
+        if (!new File("execution_" + execucao).exists()) {
             RunCommand.runCommand(mkdir);
         }
-        
+
         exec("cp",
                 System.getProperty("user.dir") + "/splited/teste.arff",
                 System.getProperty("user.dir") + "/splited/treino.arff execution_" + execucao);
-        
+
         exec("mv",
                 folder + "/",
                 "execution_" + execucao + "/");
@@ -67,16 +70,17 @@ public class Movimentacao {
         mkdir = "mkdir " + folder;
         RunCommand.runCommand(mkdir);
     }
-    
-    /**Executa um comando no terminal. Utilizar para comandos que utilizem dois 
-     *parâmetros de entrada (src e dst)
-     * 
+
+    /**
+     * Executa um comando no terminal. Utilizar para comandos que utilizem dois
+     * parâmetros de entrada (src e dst)
+     *
      * @param comando Comando que será utilizado, por exemplo: mv, cp, etc
      * @param src Path do aquivo (txt, arff, etc)
      * @param dst Path do diretório
      */
-    public static void exec(String comando,String src, String dst){
-        RunCommand.runCommand(comando+" "+src+" "+dst);
+    public static void exec(String comando, String src, String dst) {
+        //RunCommand.runCommand(comando+" "+src+" "+dst);
+        RunCommand.runCommand(comando, src, dst);
     }
-
 }

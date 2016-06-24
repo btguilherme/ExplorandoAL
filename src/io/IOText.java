@@ -38,8 +38,8 @@ public class IOText implements IIO {
     }
 
     @Override
-    public boolean save(String src, String nome, List<String> conteudo) {
-        String p = src;
+    public boolean save(String dst, String nome, List<String> conteudo) {
+        String p = dst;
         p = p.concat(nome).concat(".txt");
         File arquivo = new File(p);
         try (FileWriter fw = new FileWriter(arquivo)) {
@@ -51,6 +51,23 @@ public class IOText implements IIO {
         } catch (IOException ex) {
             return false;
         }
+        return true;
+    }
+
+    @Override
+    public boolean save(String dst, String nome, String conteudo) {
+        String p = dst;
+        p = p.concat(nome).concat(".txt");
+        File arquivo = new File(p);
+        FileWriter fw;
+        try {
+            fw = new FileWriter(arquivo);
+            fw.write(conteudo);
+            fw.flush();
+        } catch (IOException ex) {
+            return false;
+        }
+            
         return true;
     }
 

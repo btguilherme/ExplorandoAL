@@ -14,4 +14,5 @@ import java.util.List;
 public interface IIO {
     List<String> open(String src);
     boolean save(String src, String nome, List<String> conteudo);
+    boolean save(String src, String nome, String conteudo);
 }

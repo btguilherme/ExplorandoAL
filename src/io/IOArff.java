@@ -92,4 +92,9 @@ public class IOArff implements IIO {
         return true;
     }
 
+    @Override
+    public boolean save(String src, String nome, String conteudo) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 }

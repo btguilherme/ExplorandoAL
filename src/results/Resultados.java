@@ -17,7 +17,14 @@ import java.util.List;
 public class Resultados {
 
     public static void main(String[] args) {
+        System.err.println("opf super");
         mediaDesvioPadrao("opfsuper");
+        
+        System.err.println("svm cross");
+        mediaDesvioPadrao("svmcross");
+        
+        System.err.println("opf semi");
+        mediaDesvioPadrao("opfsemi");
     }
 
     public static void mediaDesvioPadrao(String classifierType) {

@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import main.Main;
 import weka.classifiers.meta.ClassificationViaClustering;
 import weka.clusterers.SimpleKMeans;
 import weka.core.EuclideanDistance;
@@ -73,7 +74,7 @@ public class LearnActive extends Learn {
 
             int numCorrecoes = 0;
             if (iteration != 0) {
-                int numFronteira = clusterer.getNumClusters();//2xnclass
+                int numFronteira = clusterer.getNumClusters();
 
                 if (numFronteira > fronteirasTemp.size()) {
                     numFronteira = fronteirasTemp.size();
@@ -112,7 +113,8 @@ public class LearnActive extends Learn {
 
             classify(classifiers, iteration, raizes, z3, folds, time, numClassesConhecidas, numCorrecoes);
 
-            if (iteration != 0 && (fronteirasTemp.size() - numInstancias) < numInstancias) {
+            //if (iteration != 0 && (fronteirasTemp.size() - numInstancias) < numInstancias) {
+            if (iteration != 0 && fronteirasTemp.size() < numInstancias) {
                 break;
             }
 
@@ -299,7 +301,7 @@ public class LearnActive extends Learn {
                         for (int j = 0; j < amostrasCorrigidas.numInstances(); j++) {
                             String amostraCorrigida = amostrasCorrigidas.instance(j).toString();
                             String amostraACorrigir = raiz.toString();
-                            if (amostraCorrigida.contains(amostraACorrigir)){
+                            if (amostraCorrigida.contains(amostraACorrigir)) {
                                 amostraJaCorrigida = true;
                             }
                         }
@@ -376,59 +378,6 @@ public class LearnActive extends Learn {
     private List<BeanAmostra> selecionaAmostrasFronteira(Instances z2,
             SimpleKMeans clusterer, int kVizinhos, ClassificationViaClustering cvc) {
 
-//        Instances z2SemClasse = removeAtributoClasse(z2);
-//        
-//        List<BeanAmostra> fronteirasTemp = new ArrayList<>();
-//        List<BeanAmostra> amostrasT = new ArrayList<>();
-//        List<BeanAmostra> vizinhosT = new ArrayList<>();
-//
-//        for (int i = 0; i < z2SemClasse.numInstances(); i++) {
-//            Instance t = z2SemClasse.instance(i);
-//            int clusterT = 0;
-//            try {
-//                clusterT = clusterer.clusterInstance(t);
-//            } catch (Exception ex) {
-//                Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//
-//            KDTree tree = new KDTree();
-//            EuclideanDistance df = new EuclideanDistance(z2SemClasse);
-//            df.setDontNormalize(true);
-//            try {
-//                tree.setInstances(z2SemClasse);
-//                tree.setDistanceFunction(df);
-//            } catch (Exception ex) {
-//                Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//
-//            Instances vizinhos = null; //aqui não tem classe
-//            try {
-//                vizinhos = tree.kNearestNeighbours(t, kVizinhos);
-//                vizinhos.setClassIndex(vizinhos.numAttributes() - 1);
-//            } catch (Exception ex) {
-//                Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//
-//            for (int j = 0; j < vizinhos.numInstances(); j++) {
-//                int clusterV = 0;
-//                try {
-//                    clusterV = clusterer.clusterInstance(vizinhos.instance(j));
-//                } catch (Exception ex) {
-//                    Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//
-//                if (clusterT != clusterV) {//amostra de fronteira
-//
-//                    BeanAmostra amostraT = new BeanAmostra(z2SemClasse.instance(i), clusterT, i);
-//                    BeanAmostra vizinhoT = new BeanAmostra(vizinhos.instance(j), 0, j);
-//
-//                    amostrasT.add(amostraT);
-//                    vizinhosT.add(vizinhoT);
-//
-//                    break;
-//                }
-//            }
-//        }
         List<BeanAmostra> fronteirasTemp = new ArrayList<>();
         List<BeanAmostra> amostrasT = new ArrayList<>();
         List<BeanAmostra> vizinhosT = new ArrayList<>();
@@ -477,6 +426,8 @@ public class LearnActive extends Learn {
 
                     amostrasT.add(amostraT);
                     vizinhosT.add(vizinhoT);
+                    
+                    fronteirasTemp.add(amostraT);
 
                     break;
                 }
@@ -484,8 +435,9 @@ public class LearnActive extends Learn {
         }
 
         //ordenar da menor distancia para a maior
-        //amostras em fronteirasTemp não tem classe
-        fronteirasTemp = ordenaAmostrasFronteira(amostrasT, vizinhosT, z2);
+        if(Main.ORDENA_AMOSTRAS){
+            fronteirasTemp = ordenaAmostrasFronteira(amostrasT, vizinhosT, z2);
+        }
 
         return fronteirasTemp;
     }

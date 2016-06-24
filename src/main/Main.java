@@ -21,16 +21,24 @@ import weka.core.Instances;
  * @author guilherme
  */
 public class Main {
+    
+    //lung - 2 folds
+    //sementes - 10 folds
+    //aml - 2 folds
+    //ecoli - 8 folds
+    //colon - 2 folds
 
     private static final int XNUMCLASSES = 2;
-    private static final int FOLDS = 8;
+    private static final int FOLDS = 2;
     //rand ou act
     private static final String OPC_APRENDIZADO = "act";
     private static final int MAX_EXECS = 1;
     private static final boolean INPUT_MANUAL = false;
+    public static final boolean ORDENA_AMOSTRAS = false;
 
     //opfsuper svmcross svmgrid opfsemi universvm
-    private static final String classificador = "svmcross opfsuper";
+    //private static final String CLASSIFICADOR = "universvm";
+    private static final String CLASSIFICADOR = "opfsuper svmcross opfsemi";
 
     public static void main(String[] args) throws Exception {
         
@@ -52,35 +60,36 @@ public class Main {
         for (int execucao = 0; execucao < MAX_EXECS; execucao++) {
 
             if (INPUT_MANUAL == false) {
-                //split
-                //split("/home/guilherme/MineracaoDados/src/arffs/100leaves/data_Mar_64.arff",
-                split("/home/guilherme/MineracaoDados/src/arffs/ecoli/ecoli_no_string_att_number_class.arff",
+                //split  
+                split("/home/guilherme/NetBeansProjects/ExplorandoAL/bases/AMLALL_all.arff",
+                //split("/home/guilherme/NetBeansProjects/ExplorandoAL/bases/MLL_all.arff",
+                //split("/home/guilherme/NetBeansProjects/ExplorandoAL/bases/lungcancer_all.arff",
+                //split("/home/guilherme/NetBeansProjects/ExplorandoAL/bases/sementes.arff",
+                //split("/home/guilherme/MineracaoDados/src/arffs/ecoli/ecoli_no_string_att_number_class.arff",
                         "80", "splited");
                 //carrega z2    
                 z2 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
                         concat("splited").concat(File.separator).concat("treino.arff"));
-                z2.setClassIndex(z2.numAttributes() - 1);
+
                 //carrega z3
                 z3 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
                         concat("splited").concat(File.separator).concat("teste.arff"));
             }
+            
+            z2.setClassIndex(z2.numAttributes() - 1);
 
             //aprendizado
             switch(OPC_APRENDIZADO){
                 case "rand":
-                    new LearnRandom().random(z2, z3, FOLDS, XNUMCLASSES, classificador);
+                    new LearnRandom().random(z2, z3, FOLDS, XNUMCLASSES, CLASSIFICADOR);
                     break;
                 case "act":
                     int kVizinhos = z2.numClasses() * XNUMCLASSES;
-                    new LearnActive().active(z2, z3, FOLDS, XNUMCLASSES, classificador, kVizinhos);
+                    new LearnActive().active(z2, z3, FOLDS, XNUMCLASSES, CLASSIFICADOR, kVizinhos);
                     break;
             }
-            
-            
-            
 
-            mov.mvExecucao(execucao, classificador);
-            //mov.mv2TrashRaizes();
+            mov.mvExecucao(execucao, CLASSIFICADOR);
         }
     }
 
@@ -96,7 +105,6 @@ public class Main {
     private static List<Instances> inputManual(String treino, String teste) {
 
         IOArff io = new IOArff();
-        Movimentacao mov = new Movimentacao();
         Instances z2 = null, z3 = null;
 
         try {
@@ -114,7 +122,7 @@ public class Main {
         ret.add(z2);
         ret.add(z3);
 
-        mov.mvSplit(files, "splited");
+        Movimentacao.mvSplit(files, "splited");
 
         return ret;
     }

@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * @author guilherme
  */
 public class RunCommand {
-
+    
     public static void runCommand(String comando) {
         int exitVal;
         try {
@@ -40,4 +40,9 @@ public class RunCommand {
             Logger.getLogger(RunCommand.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    public static void runCommand(String func, String src, String dst) {
+        runCommand("sh shell/mv_cp_script.sh " + func + " " + src + " " + dst);
+    }
+    
 }
