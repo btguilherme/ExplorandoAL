@@ -9,6 +9,8 @@ import io.IOText;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -19,14 +21,142 @@ public class Resultados {
     public static void main(String[] args) {
         System.err.println("opf super");
         mediaDesvioPadrao("opfsuper");
+
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Resultados.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
         System.err.println("svm cross");
         mediaDesvioPadrao("svmcross");
         
-        System.err.println("opf semi");
-        mediaDesvioPadrao("opfsemi");
+        //System.err.println("opf semi");
+        //mediaDesvioPadrao("opfsemi");
+        
+        System.err.println("opf super");
+        numClassesConhecidas("opfsuper");
+        
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Resultados.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        System.err.println("svm cross");
+        numClassesConhecidas("svmcross");
     }
 
+    public static void numClassesConhecidas(String classifierType) {
+        String folderResults = null;
+        
+        boolean svmBased = false;
+        boolean opfBased = false;
+
+        switch (classifierType) {
+            case "opfsuper":
+                folderResults = "opf_results";
+                opfBased = true;
+                break;
+            case "opfsemi":
+                folderResults = "opfsemi_results";
+                opfBased = true;
+                break;
+            case "svmgrid":
+                folderResults = "grid_results";
+                svmBased = true;
+                break;
+            case "svmcross":
+                folderResults = "svm_results";
+                svmBased = true;
+                break;
+        }
+
+        IOText io = new IOText();
+
+        String execution = "execution_";
+        String prePath = //"/media/guilherme/Arquivos/SIBGRAPI/Subtypes_RB/";
+        System.getProperty("user.dir").concat(File.separator);
+        
+        File diretorioExec;
+
+        int indiceExec = 0;
+        int indiceIt = 0;
+
+        List<Double> sumNClassesConhecidas = new ArrayList<>();
+        List<Double> sumNCorrecoes = new ArrayList<>();
+
+        List<List<Double>> todosValoresNClassesConhecidas = new ArrayList<>();
+        List<List<Double>> todosValoresNCorrecoes = new ArrayList<>();
+
+        do {
+            String pathExec = prePath + execution + indiceExec + File.separator + folderResults;
+            diretorioExec = new File(pathExec);
+            if (diretorioExec.exists()) {
+                File diretorioIt;
+                indiceIt = 0;
+
+                List<Double> nClassesConhecidasIt = new ArrayList<>();
+                List<Double> nCorrecoesIt = new ArrayList<>();
+
+                do {
+                    String pathIt = pathExec + File.separator + "it" + indiceIt;
+                    diretorioIt = new File(pathIt);
+                    if (diretorioIt.exists()) {
+
+                        double nClassesConhecidas = 0;
+                        double nCorrecoes = 0;
+
+                        if (svmBased) {
+                            nClassesConhecidas = Double.valueOf(io.open(pathIt + File.separator + "output.txt").get(1).split("\t")[5]);
+                            nCorrecoes = Double.valueOf(io.open(pathIt + File.separator + "output.txt").get(1).split("\t")[6]);
+                            
+                        } else if (opfBased) {
+                            nClassesConhecidas = Double.valueOf(io.open(pathIt + File.separator + "OutrasInfos.txt").get(1).split("\t")[2]);
+                            nCorrecoes = Double.valueOf(io.open(pathIt + File.separator + "OutrasInfos.txt").get(1).split("\t")[1]);
+                        }
+
+                        nClassesConhecidasIt.add(nClassesConhecidas);
+                        nCorrecoesIt.add(nCorrecoes);
+
+                        if (indiceExec == 0) {
+                            sumNClassesConhecidas.add(nClassesConhecidas);
+                            sumNCorrecoes.add(nCorrecoes);
+                        } else {
+                            sumNClassesConhecidas.set(indiceIt, sumNClassesConhecidas.get(indiceIt) + nClassesConhecidas);
+                            sumNCorrecoes.set(indiceIt, sumNCorrecoes.get(indiceIt) + nCorrecoes);
+                        }
+                    }
+                    indiceIt++;
+                } while (diretorioIt.exists());
+
+                todosValoresNClassesConhecidas.add(nClassesConhecidasIt);
+                todosValoresNCorrecoes.add(nCorrecoesIt);
+            }
+            indiceExec++;
+        } while (diretorioExec.exists());
+
+        List<Double> dpNClassesConhecidas = desvioPadrao(indiceIt, indiceExec, todosValoresNClassesConhecidas, sumNClassesConhecidas);
+        List<Double> dpNCorrecoes = desvioPadrao(indiceIt, indiceExec, todosValoresNCorrecoes, sumNCorrecoes);
+
+        System.out.println("AVERAGES");
+        System.out.println("knowClass\tnCorrect\t");
+        for (int i = 0; i < sumNClassesConhecidas.size(); i++) {
+            System.out.printf("%.2f\t%.2f\n", (sumNClassesConhecidas.get(i) / (indiceExec - 1)), (sumNCorrecoes.get(i) / (indiceExec - 1)));
+        }
+        System.out.println("");
+        System.out.println("STD DEVS");
+        System.out.println("knowClass\tnCorrect\t");
+        for (int i = 0; i < dpNClassesConhecidas.size(); i++) {
+            System.out.printf("%.2f\t%.2f\n", dpNClassesConhecidas.get(i), dpNCorrecoes.get(i));
+        }
+    }
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
     public static void mediaDesvioPadrao(String classifierType) {
 
         String folderResults = null;
@@ -92,7 +222,7 @@ public class Resultados {
                     if (diretorioIt.exists()) {
 
                         double t_selec = 0, acc = 0, t_test = 0, t_train = 0;
-                        
+
                         if (svmBased) {
                             t_selec = Double.valueOf(io.open(pathIt + File.separator + "output.txt").get(1).split("\t")[3]);
                             acc = Double.valueOf(io.open(pathIt + File.separator + "output.txt").get(1).split("\t")[2]);

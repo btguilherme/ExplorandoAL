@@ -6,14 +6,7 @@
 package main;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import utils.RunCommand;
 
 /**
@@ -60,9 +53,17 @@ public class Movimentacao {
         }
 
         exec("cp",
+                System.getProperty("user.dir") + "/splited/treino.arff",
+                System.getProperty("user.dir") + "/execution_" + execucao);
+        
+        exec("cp",
                 System.getProperty("user.dir") + "/splited/teste.arff",
-                System.getProperty("user.dir") + "/splited/treino.arff execution_" + execucao);
+                System.getProperty("user.dir") + "/execution_" + execucao);
 
+        exec("cp",
+                System.getProperty("user.dir") + "/amostrasDeFronteira.arff",
+                System.getProperty("user.dir") + "/execution_" + execucao);
+                        
         exec("mv",
                 folder + "/",
                 "execution_" + execucao + "/");

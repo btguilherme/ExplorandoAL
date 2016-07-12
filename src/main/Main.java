@@ -7,8 +7,10 @@ package main;
 
 import io.IOArff;
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import learning.LearnActive;
@@ -22,25 +24,21 @@ import weka.core.Instances;
  */
 public class Main {
     
-    //lung - 2 folds
-    //sementes - 10 folds
-    //aml - 2 folds
-    //ecoli - 8 folds
-    //colon - 2 folds
-
-    private static final int XNUMCLASSES = 2;
-    private static final int FOLDS = 2;
-    //rand ou act
-    private static final String OPC_APRENDIZADO = "act";
-    private static final int MAX_EXECS = 1;
-    private static final boolean INPUT_MANUAL = false;
-    public static final boolean ORDENA_AMOSTRAS = false;
-
-    //opfsuper svmcross svmgrid opfsemi universvm
-    //private static final String CLASSIFICADOR = "universvm";
-    private static final String CLASSIFICADOR = "opfsuper svmcross opfsemi";
-
     public static void main(String[] args) throws Exception {
+        
+        Properties props = new Properties();
+	FileInputStream file = 
+                new FileInputStream(System.getProperty("user.dir").concat(File.separator)
+                        + "/src/properties/propriedades.properties");
+	props.load(file);
+        
+        int XNUMCLASSES = Integer.valueOf(props.getProperty("prop.xnumclasses"));
+        int FOLDS = Integer.valueOf(props.getProperty("prop.folds"));
+        String OPC_APRENDIZADO = props.getProperty("prop.aprendizado");
+        int MAX_EXECS = Integer.valueOf(props.getProperty("prop.execucoes"));
+        boolean INPUT_MANUAL = Boolean.valueOf(props.getProperty("prop.inputManual"));
+        String ORDENACAO = props.getProperty("prop.ordenacao");
+        String CLASSIFICADOR = props.getProperty("prop.classificador");
         
         Movimentacao mov = new Movimentacao();
         IOArff io = new IOArff();
@@ -50,8 +48,8 @@ public class Main {
         if (INPUT_MANUAL == true) {
             List<Instances> temp
                     = inputManual(
-                            "",//TREINO
-                            ""//TESTE
+                            props.getProperty("prop.inputManual.treino"),
+                            props.getProperty("prop.inputManual.teste")
                     );
             z2 = temp.get(0);
             z3 = temp.get(1);
@@ -61,12 +59,8 @@ public class Main {
 
             if (INPUT_MANUAL == false) {
                 //split  
-                split("/home/guilherme/NetBeansProjects/ExplorandoAL/bases/AMLALL_all.arff",
-                //split("/home/guilherme/NetBeansProjects/ExplorandoAL/bases/MLL_all.arff",
-                //split("/home/guilherme/NetBeansProjects/ExplorandoAL/bases/lungcancer_all.arff",
-                //split("/home/guilherme/NetBeansProjects/ExplorandoAL/bases/sementes.arff",
-                //split("/home/guilherme/MineracaoDados/src/arffs/ecoli/ecoli_no_string_att_number_class.arff",
-                        "80", "splited");
+                split(props.getProperty("prop.inputNormal"),
+                        props.getProperty("prop.split.treino"), "splited");
                 //carrega z2    
                 z2 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
                         concat("splited").concat(File.separator).concat("treino.arff"));
@@ -81,14 +75,15 @@ public class Main {
             //aprendizado
             switch(OPC_APRENDIZADO){
                 case "rand":
-                    new LearnRandom().random(z2, z3, FOLDS, XNUMCLASSES, CLASSIFICADOR);
+                    new LearnRandom().random(z2, z3, FOLDS, /*XNUMCLASSES*/1, CLASSIFICADOR);
                     break;
                 case "act":
                     int kVizinhos = z2.numClasses() * XNUMCLASSES;
-                    new LearnActive().active(z2, z3, FOLDS, XNUMCLASSES, CLASSIFICADOR, kVizinhos);
+                    new LearnActive().active(z2, z3, FOLDS, XNUMCLASSES, CLASSIFICADOR, kVizinhos, ORDENACAO);
                     break;
             }
 
+            Thread.sleep(400);
             mov.mvExecucao(execucao, CLASSIFICADOR);
         }
     }

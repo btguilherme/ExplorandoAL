@@ -55,8 +55,9 @@ public class Learn {
         classificadorOPF.makeTheSteps("raizes" + iteration);
         List<String> tempOPF = new ArrayList<>();
         tempOPF.add("t_select\tn_corrections\tknow_classes\tZ1_length");
-        tempOPF.add(String.valueOf(time)+"\t"+String.valueOf(numCorrecoes)+"\t"+numClassesConhecidas+"\t");
-        tempOPF.add(String.valueOf(raizes.numInstances()));
+        tempOPF.add(String.valueOf(time)+"\t"+String.valueOf(numCorrecoes)+"\t"+
+                numClassesConhecidas+"\t"+String.valueOf(raizes.numInstances()));
+        
         new IOText().save(System.getProperty("user.dir").concat(File.separator), "OutrasInfos", tempOPF);
         moveFilesOPF(iteration);
     }
@@ -68,8 +69,9 @@ public class Learn {
         classificadorOPFSemi.makeTheSteps("raizes" + iteration);
         List<String> tempOPF = new ArrayList<>();
         tempOPF.add("t_select\tn_corrections\tknow_classes\tZ1_length");
-        tempOPF.add(String.valueOf(time)+"\t"+String.valueOf(numCorrecoes)+"\t"+numClassesConhecidas+"\t");
-        tempOPF.add(String.valueOf(raizes.numInstances()));
+        tempOPF.add(String.valueOf(time)+"\t"+String.valueOf(numCorrecoes)+"\t"+
+                numClassesConhecidas+"\t"+String.valueOf(raizes.numInstances()));
+        
         new IOText().save(System.getProperty("user.dir").concat(File.separator), "OutrasInfos", tempOPF);
         moveFilesOPFSemi(iteration);
     }
@@ -144,6 +146,11 @@ public class Learn {
         Movimentacao.exec("mv", preSrc + "Z1LINE.out", dst);
         Movimentacao.exec("mv", preSrc + "Z1LINE.time", dst);
         Movimentacao.exec("mv", preSrc + "OutrasInfos.txt", dst);
+        
+        Movimentacao.exec("cp", preSrc + "tempoAgrupamento.txt", dst);
+        Movimentacao.exec("cp", preSrc + "tempoSelecaoFronteira.txt", dst);
+        Movimentacao.exec("cp", preSrc + "tempoOrdenacao.txt", dst);
+        
 
         Movimentacao.exec("cp", preSrc + "raizes" + iteration + ".arff", dst);
     }
@@ -169,6 +176,10 @@ public class Learn {
         Movimentacao.exec("mv", preSrc + "training.out", dst);
         Movimentacao.exec("mv", preSrc + "training.time", dst);
         Movimentacao.exec("mv", preSrc + "OutrasInfos.txt", dst);
+        
+        Movimentacao.exec("cp", preSrc + "tempoAgrupamento.txt", dst);
+        Movimentacao.exec("cp", preSrc + "tempoSelecaoFronteira.txt", dst);
+        Movimentacao.exec("cp", preSrc + "tempoOrdenacao.txt", dst);
 
         Movimentacao.exec("cp", preSrc + "raizes" + iteration + ".arff", dst);
     }
@@ -184,7 +195,17 @@ public class Learn {
         String preSrc = System.getProperty("user.dir").concat(File.separator);
         String dst = preSrc + folder + "/it" + iteration;
 
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         Movimentacao.exec("mv", preSrc + "output.txt", dst);
+        
+        Movimentacao.exec("cp", preSrc + "tempoAgrupamento.txt", dst);
+        Movimentacao.exec("cp", preSrc + "tempoSelecaoFronteira.txt", dst);
+        Movimentacao.exec("cp", preSrc + "tempoOrdenacao.txt", dst);
 
         Movimentacao.exec("cp", preSrc + "raizes" + iteration + ".arff", dst);
         Movimentacao.exec("cp", preSrc + "splited".concat(File.separator).concat("teste.arff"), dst);
@@ -204,13 +225,15 @@ public class Learn {
 
         Movimentacao.exec("mv", preSrc + "acuracy.txt", dst);
         Movimentacao.exec("mv", preSrc + "labeled.svm.txt", dst);
-        //Movimentacao.exec("mv", preSrc + "model", dst);
         Movimentacao.exec("mv", preSrc + "output.txt", dst);
         Movimentacao.exec("mv", preSrc + "outputUniverSVM.txt", dst);
         Movimentacao.exec("mv", preSrc + "splited".concat(File.separator).concat("teste.arff_test.svm.txt"), dst);
         Movimentacao.exec("mv", preSrc + "testing.txt", dst);
-        //Movimentacao.exec("mv", preSrc + "training.txt", dst);
         Movimentacao.exec("mv", preSrc + "unlabeled.svm.txt", dst);
+        
+        Movimentacao.exec("cp", preSrc + "tempoAgrupamento.txt", dst);
+        Movimentacao.exec("cp", preSrc + "tempoSelecaoFronteira.txt", dst);
+        Movimentacao.exec("cp", preSrc + "tempoOrdenacao.txt", dst);
 
         Movimentacao.exec("cp", preSrc + "raizes" + iteration + ".arff", dst);
     }

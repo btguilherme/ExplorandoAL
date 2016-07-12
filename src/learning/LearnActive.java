@@ -6,6 +6,8 @@
 package learning;
 
 import io.IOArff;
+import io.IOText;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -15,7 +17,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import main.Main;
 import weka.classifiers.meta.ClassificationViaClustering;
 import weka.clusterers.SimpleKMeans;
 import weka.core.EuclideanDistance;
@@ -31,23 +32,29 @@ import weka.filters.Filter;
 public class LearnActive extends Learn {
 
     public void active(Instances z2, Instances z3, int folds, int xNumClasses,
-            String classifiers, int kVizinhos) {
+            String classifiers, int kVizinhos, String ordenacao) {
 
-        IOArff ioArff = new IOArff();
-
+        long init, end, diff;
+        double time;
+        
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                    "tempoOrdenacao", "0.0");
+        
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                    "tempoSelecaoFronteira", "0.0");
+        
         int numInstancias = z2.attribute(z2.numAttributes() - 1).numValues() * xNumClasses;
         int iteration = 0;
 
         List<Object> temp = criaCluster(numInstancias, z2);
         SimpleKMeans clusterer = (SimpleKMeans) temp.get(0);
         ClassificationViaClustering cvc = (ClassificationViaClustering) temp.get(1);
-        int classesConhecidas = (int) temp.get(2);
         //key = classe     value = cluster
-        Map dicionario = (Map) temp.get(3);
+        Map dicionario = (Map) temp.get(2);
 
         Instances centroids = clusterer.getClusterCentroids();
         Instances raizes = raizesProximasAoCentroide(centroids, z2);
-
+        
         //remove as instancias raizes de z2 (remove duplicatas)
         //mantem as classes
         temp = atualizaZ2(z2, raizes);
@@ -67,19 +74,28 @@ public class LearnActive extends Learn {
              para demais iteracoes, amostras são selecionadas do conjunto de amostras de fronteira
              */
             if (iteration == 1) {
-                fronteirasTemp = selecionaAmostrasFronteira(z2, clusterer, kVizinhos, cvc);
+                init = System.nanoTime();
+                fronteirasTemp = selecionaAmostrasFronteira(z2, kVizinhos, cvc, ordenacao);
+                end = System.nanoTime();
+                diff = end - init;
+                time = (diff / 1000000000.0);//tempo selecionar amostras de fronteira
+                
+                salvarFronteirasEmArquivo(fronteirasTemp, z2);
+                
+                new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                    "tempoSelecaoFronteira", String.valueOf(time));
             }
 
-            long init = System.nanoTime();
-
+            init = System.nanoTime();
             int numCorrecoes = 0;
+            int numFronteira = 0;
+            boolean acabouAmostrasFronteira = false;
             if (iteration != 0) {
-                int numFronteira = clusterer.getNumClusters();
-
+                numFronteira = clusterer.getNumClusters();
                 if (numFronteira > fronteirasTemp.size()) {
                     numFronteira = fronteirasTemp.size();
+                    acabouAmostrasFronteira = true;
                 }
-
                 numAmostrasZ2 = numAmostrasZ2 - numFronteira;
 
                 temp = selecionaAmostrasDaFronteira(z2, numFronteira, fronteirasTemp);
@@ -98,23 +114,17 @@ public class LearnActive extends Learn {
                 numCorrecoes = (int) temp.get(1);
             }
 
-            long end = System.nanoTime();
-            long diff = end - init;
-            double time = (diff / 1000000000.0);//tempo de selecao
+            end = System.nanoTime();
+            diff = end - init;
+            time = (diff / 1000000000.0);//tempo de selecao
 
-            int numClassesConhecidas;
-            if (iteration == 0) {
-                numClassesConhecidas = classesConhecidas;
-            } else {
-                numClassesConhecidas = numClassesConhecidas(raizes);
-            }
+            int numClassesConhecidas = numClassesConhecidas(raizes);
 
-            ioArff.saveArffFile(raizes, "raizes" + iteration);
+            new IOArff().saveArffFile(raizes, "raizes" + iteration);
 
             classify(classifiers, iteration, raizes, z3, folds, time, numClassesConhecidas, numCorrecoes);
 
-            //if (iteration != 0 && (fronteirasTemp.size() - numInstancias) < numInstancias) {
-            if (iteration != 0 && fronteirasTemp.size() < numInstancias) {
+            if(acabouAmostrasFronteira){
                 break;
             }
 
@@ -126,7 +136,9 @@ public class LearnActive extends Learn {
     private List<Object> criaCluster(int size, Instances z2) {
 
         Instances z2SemClasse = removeAtributoClasse(z2);
-
+        
+        long init = System.nanoTime();
+        
         SimpleKMeans clusterer = new SimpleKMeans();
         clusterer.setSeed(10);
         clusterer.setPreserveInstancesOrder(true);
@@ -146,20 +158,14 @@ public class LearnActive extends Learn {
         } catch (Exception ex) {
             Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        long end = System.nanoTime();
+        long diff = end - init;
+        double time = (diff / 1000000000.0);//tempo agrupamento
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                    "tempoAgrupamento", String.valueOf(time));
 
-        //inicio classes conhecidas (com o clustering apenas)
-        String classesClusters = cvc.toString().split("Classes to clusters mapping:\n")[1];
-        String[] linhas = classesClusters.split("\n");
-        int contClassesConhecidas = 0;
-        for (int i = 0; i < linhas.length; i++) {
-            if (linhas[i].split(":")[1].contains("no cluster")) {
-                //
-            } else {
-                contClassesConhecidas++;
-            }
-        }
-        //fim classes conhecidas (com o clustering apenas)
-
+        //dicionario init
         Enumeration classes = z2.attribute(z2.classIndex()).enumerateValues();
         Map<Integer, Double> dic = new HashMap();
         int contador = 0;
@@ -169,64 +175,14 @@ public class LearnActive extends Learn {
             contador++;
         } while (classes.hasMoreElements());
 
+        //dicionario end
+        
         List<Object> ret = new ArrayList<>();
         ret.add(clusterer);
         ret.add(cvc);
-        ret.add(contClassesConhecidas);//int
         ret.add(dic);
 
         return ret;
-    }
-
-    private Map makeDic(SimpleKMeans clusterer) {
-        String clusterInfo = clusterer.toString();
-        String[] separados = clusterInfo.split("\n");
-
-        String[] _dadosCluster = separados[10].split(" ");
-        String[] _dadosClasses = separados[separados.length - 1].split(" ");
-
-        List<Integer> dadosCluster = new ArrayList<>();
-        List<String> dadosClasses = new ArrayList<>();
-
-        for (int i = 0; i < _dadosCluster.length; i++) {
-            if (!_dadosCluster[i].isEmpty()) {
-                try {
-                    dadosCluster.add(Integer.valueOf(_dadosCluster[i]));
-                } catch (NumberFormatException e) {
-                    //nao é numero
-                }
-            }
-        }
-
-        for (int i = 0; i < _dadosClasses.length; i++) {
-            if (!_dadosClasses[i].isEmpty()) {
-                dadosClasses.add(_dadosClasses[i]);
-            }
-        }
-
-        dadosClasses.remove(0);
-        dadosClasses.remove(0);
-
-        Map dicionario = new HashMap();
-        for (int i = 0; i < dadosClasses.size(); i++) {
-            dicionario.put(dadosCluster.get(i), dadosClasses.get(i));
-        }
-
-        return dicionario;
-    }
-
-    private List<Integer> atribuicoes(SimpleKMeans clusterer) {
-        int[] _assignments = null;
-        try {
-            _assignments = clusterer.getAssignments(); //mostra a qual cluster uma instancia pertence (predicted)
-        } catch (Exception ex) {
-            Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        List<Integer> assignments = new ArrayList<>();
-        for (int i = 0; i < _assignments.length; i++) {
-            assignments.add(_assignments[i]);
-        }
-        return assignments;
     }
 
     private Instances raizesProximasAoCentroide(Instances centroids, Instances z2) {
@@ -354,7 +310,7 @@ public class LearnActive extends Learn {
     }
 
     private List<BeanAmostra> ordenaAmostrasFronteira(List<BeanAmostra> amostrasT,
-            List<BeanAmostra> vizinhosT, Instances z2) {
+            List<BeanAmostra> vizinhosT, Instances z2, String ordenacao) {
 
         List<BeanAmostra> temp = new ArrayList<>();
         Map<Integer, Double> kkk = new HashMap<>();
@@ -371,12 +327,16 @@ public class LearnActive extends Learn {
         for (Integer value : values) {
             temp.add(amostrasT.get(value));
         }
+        
+        if(ordenacao.equals("Mm")){
+            Collections.reverse(temp);
+        }
 
         return temp;
     }
 
     private List<BeanAmostra> selecionaAmostrasFronteira(Instances z2,
-            SimpleKMeans clusterer, int kVizinhos, ClassificationViaClustering cvc) {
+            int kVizinhos, ClassificationViaClustering cvc, String ordenacao) {
 
         List<BeanAmostra> fronteirasTemp = new ArrayList<>();
         List<BeanAmostra> amostrasT = new ArrayList<>();
@@ -435,8 +395,15 @@ public class LearnActive extends Learn {
         }
 
         //ordenar da menor distancia para a maior
-        if(Main.ORDENA_AMOSTRAS){
-            fronteirasTemp = ordenaAmostrasFronteira(amostrasT, vizinhosT, z2);
+        if(!ordenacao.contains("none")){
+            long init = System.nanoTime();
+            fronteirasTemp = ordenaAmostrasFronteira(amostrasT, vizinhosT, z2, ordenacao);
+            long end = System.nanoTime();
+            long diff = end - init;
+            double time = (diff / 1000000000.0);//tempo de ordenação
+            
+            new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                    "tempoOrdenacao", String.valueOf(time));
         }
 
         return fronteirasTemp;
@@ -455,6 +422,18 @@ public class LearnActive extends Learn {
         }
 
         return dataClusterer;
+    }
+
+    private void salvarFronteirasEmArquivo(List<BeanAmostra> fronteirasTemp, Instances z2) {
+        Instances amostrasDaFronteira = new Instances(z2);
+        amostrasDaFronteira.delete();
+        
+        for (BeanAmostra fronteira : fronteirasTemp) {
+            amostrasDaFronteira.add(fronteira.getAmostra());
+        }
+        
+        new IOArff().saveArffFile(amostrasDaFronteira, "amostrasDeFronteira");
+        
     }
 
 }
