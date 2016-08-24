@@ -5,10 +5,13 @@
  */
 package classificar;
 
+import io.IOText;
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import weka.classifiers.Classifier;
 import weka.classifiers.meta.GridSearch;
+
 import weka.core.Instances;
 import weka.core.SelectedTag;
 
@@ -24,15 +27,21 @@ public class ClassificadorSVMGridSearch extends ClassificadorSVM {
 
     @Override
     public Classifier train(Instances raizes) {
+        
+        System.err.print("Treinando classificador ... ");
         long init = System.nanoTime();
+        
+        
         //ini - grid search
         GridSearch gs = new GridSearch();
         //Set the evaluation to Accuracy.
         gs.setEvaluation(new SelectedTag(GridSearch.EVALUATION_ACC, weka.classifiers.meta.GridSearch.TAGS_EVALUATION));
                 //Set the filter to weka.filters.AllFilter since we don't need any special data processing and we
         //don't optimize the filter in this case (data gets always passed through filter!).
-        gs.setFilter(new weka.filters.AllFilter());
-                //Set weka.classifiers.functions.SMO as classifier with 
+        
+/////////////////////////////////////////gs.setFilter(new weka.filters.AllFilter());
+        
+        //Set weka.classifiers.functions.SMO as classifier with 
         //weka.classifiers.functions.supportVector.RBFKernel as kernel.
         weka.classifiers.functions.SMO classifier = new weka.classifiers.functions.SMO();
         classifier.setKernel(new weka.classifiers.functions.supportVector.RBFKernel());
@@ -65,8 +74,9 @@ public class ClassificadorSVMGridSearch extends ClassificadorSVM {
         long end = System.nanoTime();
         long diff = end - init;
         double time = (diff / 1000000000.0);
-        
-        super.results = super.results.concat(String.valueOf(time)).concat("\t");
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "tempoTreino", String.valueOf(time));
+        System.err.println("feito");
         
         return classificador;
     }

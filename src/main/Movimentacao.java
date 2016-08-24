@@ -17,23 +17,34 @@ public class Movimentacao {
 
     public void mvExecucao(int execucao, String classifiers) {
 
-        if (classifiers.contains("opfsuper")) {
-            movimenta(execucao, "opf_results");
-        }
-        if (classifiers.contains("svmcross")) {
-            movimenta(execucao, "svm_results");
-        }
-        if (classifiers.contains("svmgrid")) {
-            movimenta(execucao, "grid_results");
-        }
-        if (classifiers.contains("opfsemi")) {
-            movimenta(execucao, "opfsemi_results");
-        }
-        if (classifiers.contains("semil")) {
-            movimenta(execucao, "semil_results");
-        }
-        if (classifiers.contains("universvm")) {
-            movimenta(execucao, "universvm_results");
+        switch (classifiers) {
+            case "opfsuper":
+                movimenta(execucao, "opf_results");
+                break;
+            case "svmcross":
+                movimenta(execucao, "svm_results");
+                break;
+            case "svmgrid":
+                movimenta(execucao, "grid_results");
+                break;
+            case "opfsemi":
+                movimenta(execucao, "opfsemi_results");
+                break;
+            case "semil":
+                movimenta(execucao, "semil_results");
+                break;
+            case "universvm":
+                movimenta(execucao, "universvm_results");
+                break;
+            case "CollectiveWrapper":
+                movimenta(execucao, "CollectiveWrapper_results");
+                break;
+            case "Weighting":
+                movimenta(execucao, "Weighting_results");
+                break;
+            case "YATSI":
+                movimenta(execucao, "YATSI_results");
+                break;
         }
     }
 
@@ -55,15 +66,26 @@ public class Movimentacao {
         exec("cp",
                 System.getProperty("user.dir") + "/splited/treino.arff",
                 System.getProperty("user.dir") + "/execution_" + execucao);
-        
+
         exec("cp",
                 System.getProperty("user.dir") + "/splited/teste.arff",
                 System.getProperty("user.dir") + "/execution_" + execucao);
 
-        exec("cp",
-                System.getProperty("user.dir") + "/amostrasDeFronteira.arff",
-                System.getProperty("user.dir") + "/execution_" + execucao);
-                        
+//        exec("cp",
+//                System.getProperty("user.dir") + "/amostrasDeFronteira.arff",
+//                System.getProperty("user.dir") + "/execution_" + execucao);
+//        
+//        exec("cp",
+//                System.getProperty("user.dir") + "/tempoAgrupamento.txt",
+//                System.getProperty("user.dir") + "/execution_" + execucao);
+//        
+//        exec("cp",
+//                System.getProperty("user.dir") + "/tempoSelecaoFronteira.txt",
+//                System.getProperty("user.dir") + "/execution_" + execucao);
+//        
+//        exec("cp",
+//                System.getProperty("user.dir") + "/tempoOrdenacao.txt",
+//                System.getProperty("user.dir") + "/execution_" + execucao);
         exec("mv",
                 folder + "/",
                 "execution_" + execucao + "/");

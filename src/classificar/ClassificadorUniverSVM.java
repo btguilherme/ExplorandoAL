@@ -16,11 +16,8 @@ import utils.RunCommand;
  */
 public class ClassificadorUniverSVM extends ClassificadorOPFSemi {
 
-    private int folds;
-
-    public ClassificadorUniverSVM(int folds) {
+    public ClassificadorUniverSVM() {
         super();
-        this.folds = folds;
     }
 
     @Override

@@ -6,6 +6,10 @@
 package learning;
 
 import io.IOArff;
+import io.IOText;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import raizes.Raizes;
 import weka.core.Instances;
@@ -32,7 +36,7 @@ public class LearnRandom extends Learn {
         z2 = conjuntos.get(1);
 
         do {
-            long init = System.nanoTime();
+
             if (iteration != 0) {
                 for (int i = 0; i < numInstancias; i++) {
                     raizes.add(z2.instance(i));
@@ -41,16 +45,21 @@ public class LearnRandom extends Learn {
                     z2.delete(i);
                 }
             }
-            long end = System.nanoTime();
-            long diff = end - init;
-            double time = (diff / 1000000000.0);//tempo de selecao
 
-            int numClassesConhecidas = numClassesConhecidas(raizes);
+            classesConhecidas = new HashSet<>();
+            int numClassesConhecidas = classesConhecidas(raizes);
+            List<String> outClassesConhecidas = new ArrayList<>();
+            outClassesConhecidas.add(String.valueOf(numClassesConhecidas));
+            outClassesConhecidas.add(classesConhecidas.toString());
+            new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                    "classesConhecidas", outClassesConhecidas);
 
             ioArff.saveArffFile(raizes, "raizes" + iteration);
 
-            classify(classifiers, iteration, raizes, z3, folds, time, numClassesConhecidas, 0);
+            classifica(classifiers, raizes, z3, null);
 
+            salvaDados(classifiers, iteration);
+            
             iteration++;
 
             if ((z2.numInstances() - numInstancias) < numInstancias) {

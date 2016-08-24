@@ -5,12 +5,13 @@
  */
 package classificar;
 
+import io.IOText;
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.classifiers.functions.SMO;
-import weka.core.Debug;
 import weka.core.Instances;
 
 /**
@@ -19,60 +20,57 @@ import weka.core.Instances;
  */
 public class ClassificadorSVM {
     
-    protected String results;
-    
     public ClassificadorSVM(){}
     
-    public String makeTheSteps(Instances raizes, Instances z3, int folds){
-        this.results = "";
-        z3.setClassIndex(z3.numAttributes() - 1);
-        Classifier classifier = train(raizes);
-        Evaluation eval = classify(classifier,raizes, z3, folds);
-        this.results = this.results.concat(String.valueOf(accuracy(eval))).concat("\t");
+    public Classifier makeTheSteps(Instances raizes, Instances z3){
         
-        return this.results;
+        Classifier classifier = train(raizes);
+        classify(classifier,raizes, z3);
+        
+        return classifier;
     }
 
     protected Classifier train(Instances raizes) {
 
-        Classifier classificador = new SMO();
+        System.err.print("Treinando classificador ... ");
         long init = System.nanoTime();
+        
+        Classifier classificador = new SMO();
         try {
             classificador.buildClassifier(raizes);
         } catch (Exception ex) {
             Logger.getLogger(ClassificadorSVM.class.getName()).log(Level.SEVERE, null, ex);
         }
-
         long end = System.nanoTime();
         long diff = end - init;
         double time = (diff / 1000000000.0);
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "tempoTreino", String.valueOf(time));
+        System.err.println("feito");
 
-        this.results = this.results.concat(String.valueOf(time)).concat("\t");
-        
         return classificador;
     }
 
-    protected Evaluation classify(Classifier classificador, Instances raizes, Instances z3, int folds) {
-        Evaluation eval = null;
+    protected void classify(Classifier classificador, Instances raizes, Instances z3) {
+        System.err.print("Testando classificador ... ");
         long init = System.nanoTime();
+        
+        Evaluation eval = null;
         try {
             eval = new Evaluation(raizes);
             eval.evaluateModel(classificador, z3);
-            eval.crossValidateModel(classificador, raizes, folds, new Debug.Random());
         } catch (Exception ex) {
             Logger.getLogger(ClassificadorSVM.class.getName()).log(Level.SEVERE, null, ex);
         }
+        double acc = eval.pctCorrect();
         long end = System.nanoTime();
         long diff = end - init;
         double time = (diff / 1000000000.0);
-
-        this.results = this.results.concat(String.valueOf(time)).concat("\t");
-        
-        return eval;
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "tempoTeste", String.valueOf(time));
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "acc", String.valueOf(acc));
+        System.err.println("feito");
     }
-
-    protected double accuracy(Evaluation eval) {
-        return eval.pctCorrect();
-    }
-
+ 
 }

@@ -23,15 +23,14 @@ import weka.core.Instances;
  * @author guilherme
  */
 public class Main {
-    
+
     public static void main(String[] args) throws Exception {
-        
         Properties props = new Properties();
-	FileInputStream file = 
-                new FileInputStream(System.getProperty("user.dir").concat(File.separator)
+        FileInputStream file
+                = new FileInputStream(System.getProperty("user.dir").concat(File.separator)
                         + "/src/properties/propriedades.properties");
-	props.load(file);
-        
+        props.load(file);
+
         int XNUMCLASSES = Integer.valueOf(props.getProperty("prop.xnumclasses"));
         int FOLDS = Integer.valueOf(props.getProperty("prop.folds"));
         String OPC_APRENDIZADO = props.getProperty("prop.aprendizado");
@@ -39,7 +38,8 @@ public class Main {
         boolean INPUT_MANUAL = Boolean.valueOf(props.getProperty("prop.inputManual"));
         String ORDENACAO = props.getProperty("prop.ordenacao");
         String CLASSIFICADOR = props.getProperty("prop.classificador");
-        
+        String METODOSELECAO = props.getProperty("prop.selecaoFronteira");
+
         Movimentacao mov = new Movimentacao();
         IOArff io = new IOArff();
 
@@ -55,37 +55,64 @@ public class Main {
             z3 = temp.get(1);
         }
 
-        for (int execucao = 0; execucao < MAX_EXECS; execucao++) {
+        String[] classificadores = CLASSIFICADOR.split(" ");
 
-            if (INPUT_MANUAL == false) {
-                //split  
-                split(props.getProperty("prop.inputNormal"),
-                        props.getProperty("prop.split.treino"), "splited");
-                //carrega z2    
-                z2 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
-                        concat("splited").concat(File.separator).concat("treino.arff"));
+        for (int i = 0; i < classificadores.length; i++) {
+            String classificador = classificadores[i];
 
-                //carrega z3
-                z3 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
-                        concat("splited").concat(File.separator).concat("teste.arff"));
+            for (int execucao = 0; execucao < MAX_EXECS; execucao++) {
+
+                if (INPUT_MANUAL == false) {
+                    //split  
+                    split(props.getProperty("prop.inputNormal"),
+                            props.getProperty("prop.split.treino"), "splited");
+                    //carrega z2    
+                    z2 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
+                            concat("splited").concat(File.separator).concat("treino.arff"));
+                    //carrega z3
+                    z3 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
+                            concat("splited").concat(File.separator).concat("teste.arff"));
+                } else {
+                    //carregar treino e teste das iterações do primeiro classificador
+                    //INPUT_MANUAL = true;
+                    
+                    List<Instances> temp
+                            = inputManual(
+                                    System.getProperty("user.dir").
+                                            concat(File.separator).concat("execution_" + execucao).
+                                            concat(File.separator).concat("treino.arff"),//treino
+                                    
+                                    System.getProperty("user.dir").
+                                            concat(File.separator).concat("execution_" + execucao).
+                                            concat(File.separator).concat("teste.arff")//teste
+                            );
+                    z2 = temp.get(0);
+                    z3 = temp.get(1);
+                }
+
+                z2.setClassIndex(z2.numAttributes() - 1);
+                z3.setClassIndex(z3.numAttributes() - 1);
+
+                //aprendizado
+                switch (OPC_APRENDIZADO) {
+                    case "rand":
+                        new LearnRandom().random(z2, z3, FOLDS,
+                                /*XNUMCLASSES*/ 1, CLASSIFICADOR);
+                        break;
+                    case "act":
+                        int kVizinhos = z2.numClasses() * XNUMCLASSES;
+                        new LearnActive().active(z2, z3, XNUMCLASSES, kVizinhos, 
+                                ORDENACAO, classificador, METODOSELECAO);
+                        break;
+                }
+                mov.mvExecucao(execucao, classificador);
+                System.err.println("Final execução " + (execucao + 1) + "/" + MAX_EXECS + "\n");
             }
-            
-            z2.setClassIndex(z2.numAttributes() - 1);
 
-            //aprendizado
-            switch(OPC_APRENDIZADO){
-                case "rand":
-                    new LearnRandom().random(z2, z3, FOLDS, /*XNUMCLASSES*/1, CLASSIFICADOR);
-                    break;
-                case "act":
-                    int kVizinhos = z2.numClasses() * XNUMCLASSES;
-                    new LearnActive().active(z2, z3, FOLDS, XNUMCLASSES, CLASSIFICADOR, kVizinhos, ORDENACAO);
-                    break;
-            }
+            INPUT_MANUAL = true;
 
-            Thread.sleep(400);
-            mov.mvExecucao(execucao, CLASSIFICADOR);
         }
+
     }
 
     private static void split(String path, String pctTreinamento, String folder) {
