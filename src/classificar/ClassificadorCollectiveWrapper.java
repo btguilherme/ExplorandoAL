@@ -24,17 +24,17 @@ public class ClassificadorCollectiveWrapper implements IClassificadorSemiSuper {
     public Classifier makeTheSteps(Instances raizes, Instances z3, Instances unlabeled) {
         Classifier classifier = train(raizes, unlabeled);
         classify(classifier, raizes, z3);
-
+        
         return classifier;
     }
 
     @Override
     public Classifier train(Instances raizes, Instances unlabeled) {
-
         System.err.print("Treinando classificador ... ");
         long init = System.nanoTime();
 
         CollectiveWrapper wrapper = new CollectiveWrapper();
+        
         try {
             // build classifier
             if(unlabeled == null){
@@ -51,13 +51,13 @@ public class ClassificadorCollectiveWrapper implements IClassificadorSemiSuper {
         new IOText().save(System.getProperty("user.dir").concat(File.separator),
                 "tempoTreino", String.valueOf(time));
         System.err.println("feito");
-
+        
         return wrapper;
     }
 
     @Override
     public void classify(Classifier classificador, Instances raizes, Instances z3) {
-
+        
         System.err.print("Testando classificador ... ");
         long init = System.nanoTime();
 
@@ -77,7 +77,7 @@ public class ClassificadorCollectiveWrapper implements IClassificadorSemiSuper {
         new IOText().save(System.getProperty("user.dir").concat(File.separator),
                 "acc", String.valueOf(acc));
         System.err.println("feito");
-
+        
     }
 
 }

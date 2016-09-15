@@ -22,7 +22,6 @@ import selecao.Selecao;
 import selecao.SelecaoListas;
 import selecao.SelecaoOrdem;
 import utils.RunCommand;
-import weka.classifiers.Classifier;
 import weka.clusterers.SimpleKMeans;
 import weka.core.EuclideanDistance;
 import weka.core.Instance;
@@ -53,25 +52,18 @@ public class LearnActive extends Learn {
 
         SimpleKMeans clusterer = agrupamento(numInstancias, z2);
 
+        //encontrar raizes
         Instances raizes = raizesProximasAoCentroide(z2, clusterer);
-
-        System.err.print("Salvando raízes em txt ... ");
-        new IOArff().saveArffFile(raizes, "raizes" + iteration);
-        System.err.println("feito");
-
         z2 = atualizaZ2(z2, raizes);//remove as amostras raizes de z2
+        new IOArff().saveArffFile(raizes, "raizes" + iteration);
 
-        classifica(classificador, raizes, z3, null);
-
-        selecionaAmostrasDeFronteira(z2, kVizinhos);
-
-        Instances instFronteiras = beanAmostra2Instances(z2);
-
-        z2 = atualizaZ2(z2, instFronteiras);
+        //encontrar amostras de fronteira
+        selecionaAmostrasDeFronteira(clusterer, z2, kVizinhos);        
+        z2 = atualizaZ2(z2, beanAmostra2Instances(z2));//remove as amostras de fronteira de z2
 
         Instances unlabeled = z2;
         new IOArff().saveArffFile(unlabeled, "unlabeled");
-
+        
         classifica(classificador, raizes, z3, unlabeled);
 
         classesConhecidas = new HashSet<>();
@@ -84,6 +76,9 @@ public class LearnActive extends Learn {
 
         //ordena amostras de fronteira
         ordenacao(ordenacao, z2);
+
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "tempoSelecao", "0");
 
         salvaDados(classificador, iteration);
 
@@ -114,9 +109,15 @@ public class LearnActive extends Learn {
             iteration++;
 
         } while (!isFronteiraEmpty);
-
     }
 
+    /**
+     *Método responsável por criar um cluster (k-means), dado <i>numClusteres</i>
+     * e conjunto de dados <i>Z2</i>.
+     * @param numClusteres Número de clusteres que serão formados
+     * @param z2 Conjunto de dados que será clusterizado.
+     * @return Um cluster do tipo <i>SimpleKMeans</i>
+     */
     private SimpleKMeans criaCluster(int numClusteres, Instances z2) {
         Instances z2SemClasse = removeAtributoClasse(z2);
         SimpleKMeans clusterer = new SimpleKMeans();
@@ -147,17 +148,34 @@ public class LearnActive extends Learn {
         }
         return raizes;
     }
-
+    
+    /**
+     *Método responsável por atualizar as amostras em <i>Z2</i>, ou seja,
+     * remove as amostras de <i>Z2</i> que também estão em <i>raízes</i>.
+     *
+     * @param z2 Conjunto de dados que será atualizado (terá amostras retiradas)
+     * @param raizes Conjunto de dados que não estará presente em <i>Z2</i>.
+     * @return Conjunto de dados atualizado.
+     */
     private Instances atualizaZ2(Instances z2, Instances raizes) {
-        //Instances dataClusterer = removeAtributoClasse(z2);
         List<Integer> indicesApagar = new ArrayList<>();
+
         for (int i = 0; i < z2.numInstances(); i++) {
             for (int j = 0; j < raizes.numInstances(); j++) {
-                if (z2.instance(i).toString().contains(raizes.instance(j).toString())) {
+                if (z2.instance(i).toString().equals(raizes.instance(j).toString())) {
                     indicesApagar.add(i);
                 }
             }
         }
+        Set<Integer> uniques = new HashSet<>();
+        uniques.addAll(indicesApagar);
+
+        indicesApagar.clear();
+
+        for (Integer unique : uniques) {
+            indicesApagar.add(unique);
+        }
+
         Collections.sort(indicesApagar);
         Collections.reverse(indicesApagar);
         for (Integer indice : indicesApagar) {
@@ -205,26 +223,74 @@ public class LearnActive extends Learn {
         String comando = "txt2opf " + path + " " + dat;
         RunCommand.runCommand(comando);
     }
+    
+    /**
+     *Método responsável por encontrar as amostras de fronteira entre clusters.
+     * Esse método utiliza o próprio clusterer para encontrar as amostras de fronteira.
+     *
+     * @param clusterer Cluster previamente construído, do tipo <i>SimpleKMeans</i>
+     * @param z2 Conjunto de dados que será verificado, onde as amostras de fronteira serão extraídas
+     * @param kVizinhos Número de vizinhos que serão verificados
+     */
+    private void fronteira(SimpleKMeans clusterer, Instances z2, int kVizinhos) {
+        fronteiras = new ArrayList<>();
+        amostrasT = new ArrayList<>();
+        vizinhosT = new ArrayList<>();
+        
+        Instances z2SemClasse = removeAtributoClasse(z2);
+   
+        
+        for (int i = 0; i < z2SemClasse.numInstances(); i++) {
+            Instance t = z2SemClasse.instance(i);
+            int clusterT = 0;
+            
+            
+            try {
+                clusterT = clusterer.clusterInstance(t);
+            } catch (Exception ex) {
+                Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            Instances vizinhos = null;
+            KDTree tree = new KDTree();
+            EuclideanDistance df = new EuclideanDistance(z2SemClasse);
+            df.setDontNormalize(true);
+            try {
+                tree.setInstances(z2SemClasse);
+                tree.setDistanceFunction(df);
+                vizinhos = tree.kNearestNeighbours(t, kVizinhos);
+                vizinhos.setClassIndex(vizinhos.numAttributes() - 1);
+            } catch (Exception ex) {
+                Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
+            }
 
-    private double getClassOPF(Instance t, Instances z2) {
-        Instances temp = new Instances(z2);
-        temp.delete();
-        temp.add(t);
-        new IOArff().saveArffFile(temp, "temp");
-        arff2ascii("temp.arff", "");
-        ascii2dat("temp.arff.opf", "temp.dat");
-        String command = "opf_classify temp.dat";
-        RunCommand.runCommand(command);
-        IOText io = new IOText();
-        List<String> tempOut = io.open(System.getProperty("user.dir")
-                .concat(File.separator).concat("temp.dat.out"));
+            for (int j = 0; j < vizinhos.numInstances(); j++) {
+                int clusterV = 0;
+                try {
+                    clusterV = clusterer.clusterInstance(vizinhos.instance(j));
+                } catch (Exception ex) {
+                    Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
+                }
 
-        return Double.valueOf(tempOut.get(0));
+                if (clusterT != clusterV) {
+                    BeanAmostra amostraT = new BeanAmostra(z2.instance(i), clusterT, i);
+                    BeanAmostra vizinhoT = new BeanAmostra(vizinhos.instance(j), 0, j);
+                    amostrasT.add(amostraT);
+                    vizinhosT.add(vizinhoT);
+                    fronteiras.add(amostraT);
+                    break;
+                }
+            }
+        }
+        isFronteiraEmpty = fronteiras.isEmpty();
     }
-
-
-
-    private void fronteira(Instances z2, int kVizinhos, Classifier classificador) {
+    /**
+     *Método responsável por encontrar as amostras de fronteira entre clusters.
+     * Esse método utiliza o classificador para encontrar as amostras de fronteira.
+     *
+     * @param z2 Conjunto de dados que será verificado, onde as amostras de fronteira serão extraídas
+     * @param kVizinhos Número de vizinhos que serão verificados
+     */
+    private void fronteira(Instances z2, int kVizinhos) {
         fronteiras = new ArrayList<>();
         amostrasT = new ArrayList<>();
         vizinhosT = new ArrayList<>();
@@ -233,7 +299,7 @@ public class LearnActive extends Learn {
             Instance t = z2.instance(i);
             double clusterT = 0;
             try {
-                clusterT = classificador.classifyInstance(t);
+                clusterT = classifier.classifyInstance(t);
             } catch (Exception ex) {
                 Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -249,13 +315,15 @@ public class LearnActive extends Learn {
             } catch (Exception ex) {
                 Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
             }
+
             for (int j = 0; j < vizinhos.numInstances(); j++) {
                 double clusterV = 0;
                 try {
-                    clusterV = classificador.classifyInstance(vizinhos.instance(j));
+                    clusterV = classifier.classifyInstance(vizinhos.instance(j));
                 } catch (Exception ex) {
                     Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
                 }
+
                 if (clusterT != clusterV) {
                     BeanAmostra amostraT = new BeanAmostra(z2.instance(i), clusterT, i);
                     BeanAmostra vizinhoT = new BeanAmostra(vizinhos.instance(j), 0, j);
@@ -315,12 +383,41 @@ public class LearnActive extends Learn {
         System.err.println("feito");
         return clusterer;
     }
-
+    
+    /**
+     *Método responsável por invocar o método para selecionar as amostras de fronteira.
+     * Esse método utiliza o classificador para encontrar as amostras de fronteira.
+     *
+     * @param z2 Conjunto de dados que será verificado, onde as amostras de fronteira serão extraídas
+     * @param kVizinhos Número de vizinhos que serão verificados
+     */
     private void selecionaAmostrasDeFronteira(Instances z2, int kVizinhos) {
         System.err.print("Procurando amostras de fronteira ... ");
         long init = System.nanoTime();
 
-        fronteira(z2, kVizinhos, classifier);//seleciona as amostras de fronteira
+        fronteira(z2, kVizinhos);//seleciona as amostras de fronteira
+        long end = System.nanoTime();
+        long diff = end - init;
+        double time = (diff / 1000000000.0);//tempo selecionar amostras de fronteira
+        salvarFronteirasEmArquivo(fronteiras, z2);
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "tempoSelecaoFronteira", String.valueOf(time));
+        System.err.println("feito");
+    }
+    
+    /**
+     *Método responsável por invocar o método para selecionar as amostras de fronteira.
+     * Esse método utiliza o próprio clusterer para encontrar as amostras de fronteira.
+     *
+     * @param clusterer Cluster previamente construído, do tipo <i>SimpleKMeans</i>
+     * @param z2 Conjunto de dados que será verificado, onde as amostras de fronteira serão extraídas
+     * @param kVizinhos Número de vizinhos que serão verificados
+     */
+    private void selecionaAmostrasDeFronteira(SimpleKMeans clusterer, Instances z2, int kVizinhos) {
+        System.err.print("Procurando amostras de fronteira ... ");
+        long init = System.nanoTime();
+
+        fronteira(clusterer, z2, kVizinhos);//seleciona as amostras de fronteira
         long end = System.nanoTime();
         long diff = end - init;
         double time = (diff / 1000000000.0);//tempo selecionar amostras de fronteira
@@ -348,6 +445,7 @@ public class LearnActive extends Learn {
     }
 
     private Instances selecionaAmostras(String metodoSelecao, Selecao selecao, SimpleKMeans clusterer, Instances raizes) {
+        long init = System.nanoTime();
         switch (metodoSelecao) {
             case "lista":
                 if (selecao == null) {
@@ -365,6 +463,12 @@ public class LearnActive extends Learn {
                 break;
         }
         novasAmostrasDeFronteiraSelcionadas = selecao.getAmostrasSelecionadas();
+        long end = System.nanoTime();
+        long diff = end - init;
+        double time = (diff / 1000000000.0);//tempo de seleção
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "tempoSelecao", String.valueOf(time));
+
         return raizes;
     }
 
@@ -478,61 +582,4 @@ public class LearnActive extends Learn {
 //        
 //        return raizes;
 //    }
-    
-    //    private int verificaRaizesClassificadasErradas(Instances amostras) {
-//        int contador = 0;
-//        try {
-//            for (int i = 0; i < amostras.numInstances(); i++) {
-//                String pred = String.valueOf(getClassOPF(amostras.instance(i), amostras));
-//                String actual = amostras.classAttribute().value((int) amostras.instance(i).classValue());
-//
-//                if (!actual.equals(pred)) {
-//                    contador++;
-//                }
-//            }
-//        } catch (Exception ex) {
-//            Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        return contador;
-//    }
- 
-    //    private void fronteira(Instances z2, int kVizinhos) {
-//        fronteiras = new ArrayList<>();
-//        amostrasT = new ArrayList<>();
-//        vizinhosT = new ArrayList<>();
-//
-//        for (int i = 0; i < z2.numInstances(); i++) {
-//
-//            Instance t = z2.instance(i);
-//
-//            double clusterT = getClassOPF(t, z2);
-//
-//            Instances vizinhos = null;
-//            KDTree tree = new KDTree();
-//            EuclideanDistance df = new EuclideanDistance(z2);
-//            df.setDontNormalize(true);
-//            try {
-//                tree.setInstances(z2);
-//                tree.setDistanceFunction(df);
-//                vizinhos = tree.kNearestNeighbours(t, kVizinhos);
-//                vizinhos.setClassIndex(vizinhos.numAttributes() - 1);
-//            } catch (Exception ex) {
-//                Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//
-//            for (int j = 0; j < vizinhos.numInstances(); j++) {
-//                double clusterV = getClassOPF(vizinhos.instance(j), z2);
-//                if (clusterT != clusterV) {
-//                    BeanAmostra amostraT = new BeanAmostra(z2.instance(i), clusterT, i);
-//                    BeanAmostra vizinhoT = new BeanAmostra(vizinhos.instance(j), 0, j);
-//                    amostrasT.add(amostraT);
-//                    vizinhosT.add(vizinhoT);
-//                    fronteiras.add(amostraT);
-//                    break;
-//                }
-//            }
-//        }
-//        isFronteiraEmpty = fronteiras.isEmpty();
-//    }
-
 }

@@ -29,15 +29,15 @@ public class TrainUnlabeledTest {
     public static void main(String[] args) throws Exception {
         
         // load training data, set class
-        Instances train = DataSource.read("/home/guilherme/NetBeansProjects/Splitter/dist/labeled.arff");
+        Instances train = DataSource.read("/media/guilherme/Arquivos/backupElementaryOS/NetBeansProjects/ExplorandoAL/execution_0/Weighting_results/it0/raizes0.arff");
         train.setClassIndex(train.numAttributes() - 1);
 
         // load unlabeled data, set class
-        Instances unlabeled = DataSource.read("/home/guilherme/NetBeansProjects/Splitter/dist/unlabeled.arff");
+        Instances unlabeled = DataSource.read("/media/guilherme/Arquivos/backupElementaryOS/NetBeansProjects/ExplorandoAL/execution_0/Weighting_results/it0/unlabeled.arff");
         unlabeled.setClassIndex(unlabeled.numAttributes() - 1);
 
         // load test data, set class
-        Instances test = DataSource.read("/home/guilherme/NetBeansProjects/Splitter/dist/teste.arff");
+        Instances test = DataSource.read("/media/guilherme/Arquivos/backupElementaryOS/NetBeansProjects/ExplorandoAL/execution_0/teste.arff");
         test.setClassIndex(test.numAttributes() - 1);
 
         // configure classifier
@@ -63,14 +63,14 @@ public class TrainUnlabeledTest {
 //        System.out.println(eval.toSummaryString());
         
         //ok
-//        Weighting weighting = new Weighting();
-//        // build classifier
-//        weighting.buildClassifier(train, unlabeled);
-//        // evaluate classifier
-//        CollectiveEvaluation eval = new CollectiveEvaluation(train);
-//        eval.evaluateModel(weighting, test);
-//        System.out.println(eval.toSummaryString());
-        
+        Weighting weighting = new Weighting();
+        // build classifier
+        weighting.buildClassifier(train, unlabeled);
+        // evaluate classifier
+        CollectiveEvaluation eval = new CollectiveEvaluation(train);
+        eval.evaluateModel(weighting, test);
+        System.out.println(eval.toSummaryString());
+
         //ok
 //        YATSI yatsi = new YATSI();
 //        yatsi.setKNN(10);
@@ -80,7 +80,7 @@ public class TrainUnlabeledTest {
 //        yatsi.buildClassifier(train, unlabeled);
 //        // evaluate classifier
 //        CollectiveEvaluation eval = new CollectiveEvaluation(train);
-//        eval.evaluateModel(yatsi.getClassifier(), test);
+//        eval.evaluateModel(yatsi, test);
 //        System.out.println(eval.toSummaryString());
       
         

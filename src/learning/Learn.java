@@ -87,69 +87,35 @@ public class Learn {
             case "svmcross":
                 classificadorSVM = new ClassificadorSVM();
                 classifier = classificadorSVM.makeTheSteps(raizes, z3);
-                classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
-                new IOText().save(System.getProperty("user.dir").concat(File.separator),
-                        "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
                 break;
             case "svmgrid":
                 classificadorSVMGridSearch = new ClassificadorSVMGridSearch();
                 classifier = classificadorSVMGridSearch.makeTheSteps(raizes, z3);
-                classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
-                new IOText().save(System.getProperty("user.dir").concat(File.separator),
-                        "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
                 break;
             case "LLGC":
                 classificadorLLGC = new ClassificadorLLGC();
                 classifier = classificadorLLGC.makeTheSteps(raizes, z3, unlabeled);
-                classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
-                new IOText().save(System.getProperty("user.dir").concat(File.separator),
-                        "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
                 break;
             case "CollectiveWrapper":
                 classificadorCollectiveWrapper = new ClassificadorCollectiveWrapper();
                 classifier = classificadorCollectiveWrapper.makeTheSteps(raizes, z3, unlabeled);
-                classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
-                new IOText().save(System.getProperty("user.dir").concat(File.separator),
-                        "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
                 break;
             case "Weighting":
                 classificadorWeighting = new ClassificadorWeighting();
                 classifier = classificadorWeighting.makeTheSteps(raizes, z3, unlabeled);
-                classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
-                new IOText().save(System.getProperty("user.dir").concat(File.separator),
-                        "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
                 break;
             case "YATSI":
                 classificadorYATSI = new ClassificadorYATSI();
                 classifier = classificadorYATSI.makeTheSteps(raizes, z3, unlabeled);
-                classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
-                new IOText().save(System.getProperty("user.dir").concat(File.separator),
-                        "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
                 break;
             case "FilteredCollectiveClassifier":
                 classificadorFilteredCollectiveClassifier = new ClassificadorFilteredCollectiveClassifier();
                 classifier = classificadorFilteredCollectiveClassifier.makeTheSteps(raizes, z3, unlabeled);
-                classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
-                new IOText().save(System.getProperty("user.dir").concat(File.separator),
-                        "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
                 break;
-
-//            case "opfsuper":
-//                classificadorOPF = new ClassificadorOPF();
-//                classificadorOPF.makeTheSteps("raizes" + iteration);
-//                opf = System.getProperty("user.dir").concat(File.separator).
-//                        concat("classifier.opf");
-//                int classificadasWrong = verificaRaizesClassificadasErradas(raizes);
-//                new IOText().save(System.getProperty("user.dir").concat(File.separator),
-//                        "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
-//                break;
-//
-//            case "opfsemi":
-//                break;
-//
-//            case "universvm":
-//                break;
         }
+        classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
 
     }
 
@@ -362,13 +328,13 @@ public class Learn {
             Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        Movimentacao.exec("cp", preSrc + "tempoSelecao.txt", dst);//
         Movimentacao.exec("cp", preSrc + "tempoTeste.txt", dst);//
         Movimentacao.exec("cp", preSrc + "tempoTreino.txt", dst);//
         Movimentacao.exec("cp", preSrc + "acc.txt", dst);//
         Movimentacao.exec("cp", preSrc + "classificadasErradas.txt", dst);//
         Movimentacao.exec("cp", preSrc + "classesConhecidas.txt", dst);//
         Movimentacao.exec("cp", preSrc + "unlabeled.arff", dst);
+        Movimentacao.exec("cp", preSrc + "tempoSelecao.txt", dst);//
 
         Movimentacao.exec("cp", preSrc + "amostrasDeFronteira.arff", dstFolderClassifier);
         Movimentacao.exec("cp", preSrc + "tempoAgrupamento.txt", dstFolderClassifier);

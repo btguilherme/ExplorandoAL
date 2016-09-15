@@ -35,7 +35,7 @@ public class ClassificadorYATSI extends ClassificadorLLGC {
         try {
             // build classifier
             if (unlabeled == null) {
-                yatsi.buildClassifier(raizes);
+                yatsi.buildClassifier(raizes, raizes);
             } else {
                 yatsi.buildClassifier(raizes, unlabeled);
             }

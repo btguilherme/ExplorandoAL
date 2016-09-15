@@ -17,7 +17,10 @@ import java.util.List;
 public class NovoResultados {
 
     public static void main(String[] args) {
-        calc("svm_results");
+        //calc("svm_results");
+        //calc("Weighting_results");
+        //calc("YATSI_results");
+        calc("CollectiveWrapper_results");
     }
 
     /**
