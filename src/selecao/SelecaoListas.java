@@ -29,9 +29,9 @@ public class SelecaoListas extends Selecao{
     }
     
     @Override
-    public Instances seleciona(SimpleKMeans clusterer, Instances raizes) {
+    public Instances seleciona(int numAmostras, Instances raizes) {
 
-        int numFronteira = clusterer.getNumClusters();
+        int numFronteira = numAmostras;
         novasAmostrasDeFronteiraSelcionadas = new Instances(raizes);
         novasAmostrasDeFronteiraSelcionadas.delete();
 

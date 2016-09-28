@@ -38,7 +38,7 @@ public class Raizes {
             z1.add(aux.instance(i));
         }
         for (int i = 0; i < numInstancias; i++) {
-            aux.delete(i);
+            aux.delete(0);
         }
         z1.setClassIndex(z1.numAttributes() - 1);
         

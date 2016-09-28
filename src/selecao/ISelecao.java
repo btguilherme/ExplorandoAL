@@ -5,7 +5,6 @@
  */
 package selecao;
 
-import weka.clusterers.SimpleKMeans;
 import weka.core.Instances;
 
 /**
@@ -13,7 +12,7 @@ import weka.core.Instances;
  * @author guilherme
  */
 public interface ISelecao {
-    public Instances seleciona(SimpleKMeans clusterer, Instances raizes);
+    public Instances seleciona(int numAmostras, Instances raizes);
     public boolean isEmpty();
     public Instances getAmostrasSelecionadas();
 }

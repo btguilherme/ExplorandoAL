@@ -15,35 +15,24 @@ import utils.RunCommand;
  */
 public class Movimentacao {
 
-    public void mvExecucao(int execucao, String classifiers) {
+    public void mvExecucao(String folderDst, String classifiers) {
 
         switch (classifiers) {
-            case "opfsuper":
-                movimenta(execucao, "opf_results");
-                break;
+            
             case "svmcross":
-                movimenta(execucao, "svm_results");
+                movimenta(folderDst, "svm_results");
                 break;
             case "svmgrid":
-                movimenta(execucao, "grid_results");
-                break;
-            case "opfsemi":
-                movimenta(execucao, "opfsemi_results");
-                break;
-            case "semil":
-                movimenta(execucao, "semil_results");
-                break;
-            case "universvm":
-                movimenta(execucao, "universvm_results");
+                movimenta(folderDst, "grid_results");
                 break;
             case "CollectiveWrapper":
-                movimenta(execucao, "CollectiveWrapper_results");
+                movimenta(folderDst, "CollectiveWrapper_results");
                 break;
             case "Weighting":
-                movimenta(execucao, "Weighting_results");
+                movimenta(folderDst, "Weighting_results");
                 break;
             case "YATSI":
-                movimenta(execucao, "YATSI_results");
+                movimenta(folderDst, "YATSI_results");
                 break;
         }
     }
@@ -56,42 +45,37 @@ public class Movimentacao {
         }
     }
 
-    private void movimenta(int execucao, String folder) {
+    private void movimenta(String folderDst, String folder) {
 
-        String mkdir = "mkdir execution_" + execucao;
-        if (!new File("execution_" + execucao).exists()) {
+        String mkdir = "mkdir " + folderDst;
+        if (!new File(folderDst).exists()) {
             RunCommand.runCommand(mkdir);
         }
 
         exec("cp",
                 System.getProperty("user.dir") + "/splited/treino.arff",
-                System.getProperty("user.dir") + "/execution_" + execucao);
+                System.getProperty("user.dir") + "/" + folderDst);
 
         exec("cp",
                 System.getProperty("user.dir") + "/splited/teste.arff",
-                System.getProperty("user.dir") + "/execution_" + execucao);
-
-//        exec("cp",
-//                System.getProperty("user.dir") + "/amostrasDeFronteira.arff",
-//                System.getProperty("user.dir") + "/execution_" + execucao);
-//        
-//        exec("cp",
-//                System.getProperty("user.dir") + "/tempoAgrupamento.txt",
-//                System.getProperty("user.dir") + "/execution_" + execucao);
-//        
-//        exec("cp",
-//                System.getProperty("user.dir") + "/tempoSelecaoFronteira.txt",
-//                System.getProperty("user.dir") + "/execution_" + execucao);
-//        
-//        exec("cp",
-//                System.getProperty("user.dir") + "/tempoOrdenacao.txt",
-//                System.getProperty("user.dir") + "/execution_" + execucao);
+                System.getProperty("user.dir") + "/" + folderDst);
+        
+        exec("cp",
+                System.getProperty("user.dir") + "/fronteira.arff",
+                System.getProperty("user.dir") + "/" + folderDst);
+        
+        exec("cp",
+                System.getProperty("user.dir") + "/vizinhosT.arff",
+                System.getProperty("user.dir") + "/" + folderDst);
+        
+        exec("cp",
+                System.getProperty("user.dir") + "/amostrasT.arff",
+                System.getProperty("user.dir") + "/" + folderDst);
+       
         exec("mv",
-                folder + "/",
-                "execution_" + execucao + "/");
+                folder + "/*",
+                folderDst + "/");
 
-        mkdir = "mkdir " + folder;
-        RunCommand.runCommand(mkdir);
     }
 
     /**

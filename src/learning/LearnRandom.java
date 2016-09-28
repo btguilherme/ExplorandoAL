@@ -20,9 +20,11 @@ import weka.core.Instances;
  */
 public class LearnRandom extends Learn {
 
-    public void random(Instances z2, Instances z3, int folds,
+    public void random(Instances z2, Instances z3,
             int xNumClasses, String classifiers) {
-        
+
+        isSupervisionado = tipoClassificador(classifiers);
+
         IOArff ioArff = new IOArff();
 
         int numInstancias = z2.attribute(z2.numAttributes() - 1).numValues() * xNumClasses;
@@ -35,6 +37,9 @@ public class LearnRandom extends Learn {
         //atualiza z2 (amostras de z2 original menos amostras raizes de z1)
         z2 = conjuntos.get(1);
 
+        Instances amostrasSelecionadasUnlabeled = new Instances(raizes);
+        amostrasSelecionadasUnlabeled.delete();
+
         do {
 
             if (iteration != 0) {
@@ -45,7 +50,7 @@ public class LearnRandom extends Learn {
                     z2.delete(i);
                 }
             }
-
+            
             classesConhecidas = new HashSet<>();
             int numClassesConhecidas = classesConhecidas(raizes);
             List<String> outClassesConhecidas = new ArrayList<>();
@@ -55,11 +60,27 @@ public class LearnRandom extends Learn {
                     "classesConhecidas", outClassesConhecidas);
 
             ioArff.saveArffFile(raizes, "raizes" + iteration);
+            conjuntos = r.shuffle(z2, 2 * xNumClasses);
+            Instances novasAmostras = conjuntos.get(0);
+            
+            z2 = conjuntos.get(1);
+            if (isSupervisionado) {
+                for (int i = 0; i < novasAmostras.numInstances(); i++) {
+                    raizes.add(novasAmostras.instance(i));
+                }
+            } else {
+                for (int i = 0; i < novasAmostras.numInstances(); i++) {
+                    amostrasSelecionadasUnlabeled.add(novasAmostras.instance(i));
+                }
+                new IOArff().saveArffFile(amostrasSelecionadasUnlabeled, "unlabeled");
+            }
 
-            classifica(classifiers, raizes, z3, null);
+            classifica(classifiers, raizes, z3, amostrasSelecionadasUnlabeled);
+
+            //System.out.println(raizes.numInstances() + "+" + amostrasSelecionadasUnlabeled.numInstances() + "=" + (raizes.numInstances() + amostrasSelecionadasUnlabeled.numInstances()));
 
             salvaDados(classifiers, iteration);
-            
+
             iteration++;
 
             if ((z2.numInstances() - numInstancias) < numInstancias) {

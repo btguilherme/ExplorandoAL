@@ -5,7 +5,6 @@
  */
 package selecao;
 
-import weka.clusterers.SimpleKMeans;
 import weka.core.Instances;
 
 /**
@@ -15,7 +14,7 @@ import weka.core.Instances;
 public class Selecao implements ISelecao{
 
     @Override
-    public Instances seleciona(SimpleKMeans clusterer, Instances raizes) {
+    public Instances seleciona(int numAmostras, Instances raizes) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

@@ -79,6 +79,8 @@ public class Learn {
     protected ClassificadorFilteredCollectiveClassifier classificadorFilteredCollectiveClassifier;
 
     protected Set<String> classesConhecidas;
+    
+    protected boolean isSupervisionado;
 
     protected void classifica(String classificador, Instances raizes, Instances z3, Instances unlabeled) {
 
@@ -161,7 +163,7 @@ public class Learn {
                 }
             }
         } catch (Exception ex) {
-            Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
         }
         return contador;
     }
@@ -381,5 +383,23 @@ public class Learn {
             classes.add(value);
         }
         return classes.size();
+    }
+    
+    protected boolean tipoClassificador(String classificador) {
+        boolean ret = false;
+        switch (classificador) {
+            case "svmcross":
+            case "svmgrid":
+                ret = true;
+                break;
+            case "LLGC":
+            case "CollectiveWrapper":
+            case "Weighting":
+            case "YATSI":
+            case "FilteredCollectiveClassifier":
+                ret = false;
+                break;
+        }
+        return ret;
     }
 }
