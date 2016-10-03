@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,25 +57,181 @@ public class LearnActive extends Learn {
         int iteration = 0;
 
         Selecao selecao = null;
+        System.out.println("chegou aqui");
+        ////////////////////////////////////////////////
+        //calcular distancia de uma amostra para todas
+        Float[][] distancias = new Float[z2.numInstances()][z2.numInstances()];
+        if(paramFronteiras == null){
+            for (int i = 0; i < distancias.length; i++) {
+                for (int j = 0; j < distancias.length; j++) {
+                    distancias[i][j] = (float)0.0;
+                }
+                System.out.println("foi para i="+i+" de "+distancias.length);
+            }
+            for (int i = 0; i < z2.numInstances(); i++) {
+                for (int j = i + 1; j < z2.numInstances(); j++) {
+                    Instance a1 = z2.instance(i);
+                    Instance a2 = z2.instance(j);
+
+                    EuclideanDistance d = new EuclideanDistance(z2);
+                    double dist = d.distance(a1, a2);
+
+                    distancias[i][j] = (float)dist;
+                    distancias[j][i] = (float)dist;
+                }
+            }
+        }
+        //System.exit(0);
+        ////////////////////////////////////////////////
 
         SimpleKMeans clusterer = agrupamento(numInstancias, z2);
 
         //encontrar raizes
         Instances raizes = raizesProximasAoCentroide(z2, clusterer);
-        z2 = atualizaZ2(z2, raizes);//remove as amostras raizes de z2
-        new IOArff().saveArffFile(raizes, "raizes" + iteration);
-
-        //encontrar amostras de fronteira
+        
+        ////////////////////////////////////////////////////////////////////////////////////////////////
         if(paramFronteiras == null){
-            System.out.println("nao carregou externamente");
-            selecionaAmostrasDeFronteira(clusterer, z2, kVizinhos);
+            //calcula as distancias
+            List<Set<Entry<Integer, Double>>> distsAmostra = new ArrayList<>();
+            List<Integer> indicesRaizes = new ArrayList<>();
+            for (int i = 0; i < raizes.numInstances(); i++) {
+                for (int j = 0; j < z2.numInstances(); j++) {
+                    Map<Integer, Double> temp = new HashMap<>();
+                    for (int k = 0; k < distancias.length; k++) {
+                        temp.put(k, (double)distancias[j][k]);
+                    }
+                    temp = MapUtil.sortByValue(temp);
+                    Set<Entry<Integer, Double>> rel = temp.entrySet();
+                    distsAmostra.add(rel);
+
+                    if(raizes.instance(i).toString().equals(z2.instance(j).toString())){    
+                        indicesRaizes.add(distsAmostra.size());
+                    }
+
+                }
+            }
+
+            //verifica se é de mesmo cluster
+            Instances raizesSemClasse = removeAtributoClasse(raizes);
+            Instances z2SemClasse = removeAtributoClasse(z2);
+
+            fronteiras = new ArrayList<>();
+            amostrasT = new ArrayList<>();
+            vizinhosT = new ArrayList<>();
+
+
+            for (int i = 0; i < indicesRaizes.size(); i++) {
+
+                Set<Entry<Integer, Double>> distanciasDaAmostraRaiz = distsAmostra.get(indicesRaizes.get(i));
+                int clusterRaiz = 0;
+                try {
+                    clusterRaiz = clusterer.clusterInstance(raizesSemClasse.instance(i));
+
+                    for (Entry<Integer, Double> dAmostraRaiz : distanciasDaAmostraRaiz) {
+                        int indice = dAmostraRaiz.getKey();
+                        //System.out.println(indice +"   "+z2.numInstances());
+                        int clusterFronteira = clusterer.clusterInstance(z2SemClasse.instance(indice));
+                        if(clusterRaiz != clusterFronteira){
+
+
+                            //é fronteira
+                            Set<Entry<Integer, Double>> distanciasDaAmostraX = distsAmostra.get(indice);
+                            int clusterAmostraX = 0;
+                            try {
+                                clusterAmostraX = clusterFronteira;
+
+                                int cont = 0;
+                                for (Entry<Integer, Double> dAmostraX : distanciasDaAmostraX) {
+                                    int indice2 = dAmostraX.getKey();
+                                    int clusterFronteira2 = clusterer.clusterInstance(z2SemClasse.instance(indice2));
+                                    if(clusterAmostraX == clusterFronteira2){
+                                        fronteiras.add(new BeanAmostra(z2.instance(indice2), clusterFronteira, indice2));
+                                        amostrasT.add(new BeanAmostra(z2.instance(indice2), clusterFronteira, indice2));
+                                        vizinhosT.add(new BeanAmostra(raizesSemClasse.instance(i), clusterRaiz, i));
+                                        cont++;
+                                        if(cont == 5){
+                                            break;
+                                        }
+                                    }
+                                }
+                            } catch (Exception ex) {
+                                Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+
+
+
+
+
+                        }
+                        System.out.println("dldldld");
+                    }
+                } catch (Exception ex) {
+                    Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
+            //remove duplicados
+            List<Integer> remIndices = new ArrayList<>();
+            for (int i = 0; i < fronteiras.size(); i++) {
+                for (int j = i+1; j < fronteiras.size()-1; j++) {
+                    if(fronteiras.get(i).getAmostra().toString().equals(fronteiras.get(j).getAmostra().toString())){
+                        remIndices.add(i);
+                        break;
+                    }
+                }
+            }
+            Collections.sort(remIndices);
+            Collections.reverse(remIndices);
+
+            for (int i = 0; i < remIndices.size(); i++) {
+                fronteiras.remove(fronteiras.get(remIndices.get(i)));
+                amostrasT.remove(amostrasT.get(remIndices.get(i)));
+                vizinhosT.remove(vizinhosT.get(remIndices.get(i)));
+            }
+
+
+    //        for (int i = 0; i < fronteiras.size(); i++) {
+    //            System.out.println(fronteiras.get(i).getAmostra().toString());
+    //        }
+    //        System.out.println(fronteiras.size());
+
         }else{
-            System.out.println("!!!!!!!!!!! carregou externamente!!!!!!!!!!!!!!!!!!!!");
             this.fronteiras = paramFronteiras;
             this.amostrasT = paramAmostrasT;
             this.vizinhosT = paramVizinhosT;
         }
+        //System.exit(0);
+        ////////////////////////////////////////////////////////////////////////////////////////////////
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        z2 = atualizaZ2(z2, raizes);//remove as amostras raizes de z2
+        new IOArff().saveArffFile(raizes, "raizes" + iteration);
+
+        //encontrar amostras de fronteira
+//        if(paramFronteiras == null){
+//            //System.out.println("nao carregou externamente");
+//            selecionaAmostrasDeFronteira(clusterer, z2, kVizinhos);
+//        }else{
+//            //System.out.println("!!!!!!!!!!! carregou externamente!!!!!!!!!!!!!!!!!!!!");
+//            this.fronteiras = paramFronteiras;
+//            this.amostrasT = paramAmostrasT;
+//            this.vizinhosT = paramVizinhosT;
+//        }
+        
+//        for (int i = 0; i < fronteiras.size(); i++) {
+//            System.out.println(fronteiras.get(i).getAmostra().toString());
+//        }
+//        System.out.println(fronteiras.size());
+//        System.exit(iteration);
+//        
         z2 = atualizaZ2(z2, beanAmostra2Instances(z2, fronteiras));//remove as amostras de fronteira de z2
         
         new IOArff().saveArffFile(beanAmostra2Instances(z2, fronteiras), "fronteira");
