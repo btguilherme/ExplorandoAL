@@ -39,6 +39,7 @@ public class Main {
         String ORDENACAO = props.getProperty("prop.ordenacao");
         String CLASSIFICADOR = props.getProperty("prop.classificador");
         String METODOSELECAO = props.getProperty("prop.selecaoFronteira");
+        String AGRUPAMENTO = props.getProperty("prop.agrupamento");
 
         Movimentacao mov = new Movimentacao();
         IOArff io = new IOArff();
@@ -66,107 +67,111 @@ public class Main {
         String[] ordenacao = ORDENACAO.split(" ");
         String[] selecao = METODOSELECAO.split(" ");
         String[] classificadores = CLASSIFICADOR.split(" ");
+        String[] agrupamentos = AGRUPAMENTO.split(" ");
 
         String folderName = null;
         String[][] pathsTreinoTeste = new String[MAX_EXECS][5];
 
         for (int i = 0; i < aprendizado.length; i++) {
             for (int l = 0; l < classificadores.length; l++) {
-                
+
                 loop_act:
                 for (int j = 0; j < ordenacao.length; j++) {
                     for (int k = 0; k < selecao.length; k++) {
-                        for (int execucao = 0; execucao < MAX_EXECS; execucao++) {
+                        for (int m = 0; m < agrupamentos.length; m++) {
 
-                            if (INPUT_MANUAL == false) {
-                                //split  
-                                split(props.getProperty("prop.inputNormal"),
-                                        props.getProperty("prop.split.treino"), "splited");
-                                //carrega z2    
-                                z2 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
-                                        concat("splited").concat(File.separator).concat("treino.arff"));
-                                //carrega z3
-                                z3 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
-                                        concat("splited").concat(File.separator).concat("teste.arff"));
-                            } else {
-                                //carregar treino e teste das iterações do primeiro classificador
-                                //INPUT_MANUAL = true;
+                            for (int execucao = 0; execucao < MAX_EXECS; execucao++) {
 
-                                List<Object> temp;
-                                if (Boolean.valueOf(props.getProperty("prop.inputManual")) == true) {
-                                    temp
-                                            = inputManual(props.getProperty("prop.inputManual.treino"),//treino
-                                                    props.getProperty("prop.inputManual.teste"),//teste
-                                                    props.getProperty("prop.inputManual.fronteira"),//fronteira
-                                                    props.getProperty("prop.inputManual.amostrasT"),//amostrasT
-                                                    props.getProperty("prop.inputManual.vizinhosT")//vizinhosT
-                                            );
+                                if (INPUT_MANUAL == false) {
+                                    //split  
+                                    split(props.getProperty("prop.inputNormal"),
+                                            props.getProperty("prop.split.treino"), "splited");
+                                    //carrega z2    
+                                    z2 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
+                                            concat("splited").concat(File.separator).concat("treino.arff"));
+                                    //carrega z3
+                                    z3 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
+                                            concat("splited").concat(File.separator).concat("teste.arff"));
                                 } else {
+                                //carregar treino e teste das iterações do primeiro classificador
+                                    //INPUT_MANUAL = true;
 
-                                    temp
-                                            = inputManual(pathsTreinoTeste[execucao][0],//treino
-                                                    pathsTreinoTeste[execucao][1],//teste
-                                                    pathsTreinoTeste[execucao][2],//fronteira
-                                                    pathsTreinoTeste[execucao][3],//amostrasT
-                                                    pathsTreinoTeste[execucao][4]//vizinhosT
-                                            );
+                                    List<Object> temp;
+                                    if (Boolean.valueOf(props.getProperty("prop.inputManual")) == true) {
+                                        temp
+                                                = inputManual(props.getProperty("prop.inputManual.treino"),//treino
+                                                        props.getProperty("prop.inputManual.teste"),//teste
+                                                        props.getProperty("prop.inputManual.fronteira"),//fronteira
+                                                        props.getProperty("prop.inputManual.amostrasT"),//amostrasT
+                                                        props.getProperty("prop.inputManual.vizinhosT")//vizinhosT
+                                                );
+                                    } else {
+
+                                        temp
+                                                = inputManual(pathsTreinoTeste[execucao][0],//treino
+                                                        pathsTreinoTeste[execucao][1],//teste
+                                                        pathsTreinoTeste[execucao][2],//fronteira
+                                                        pathsTreinoTeste[execucao][3],//amostrasT
+                                                        pathsTreinoTeste[execucao][4]//vizinhosT
+                                                );
+                                    }
+
+                                    z2 = (Instances) temp.get(0);
+                                    z3 = (Instances) temp.get(1);
+                                    fronteiras = (List<BeanAmostra>) temp.get(2);
+                                    amostrasT = (List<BeanAmostra>) temp.get(3);
+                                    vizinhosT = (List<BeanAmostra>) temp.get(4);
+
                                 }
 
-                                z2 = (Instances) temp.get(0);
-                                z3 = (Instances) temp.get(1);
-                                fronteiras = (List<BeanAmostra>) temp.get(2);
-                                amostrasT = (List<BeanAmostra>) temp.get(3);
-                                vizinhosT = (List<BeanAmostra>) temp.get(4);
+                                z2.setClassIndex(z2.numAttributes() - 1);
+                                z3.setClassIndex(z3.numAttributes() - 1);
 
+                                folderName = props.getProperty("prop.inputNormal").split("/")[props.getProperty("prop.inputNormal").split("/").length - 1].split(".arff")[0]
+                                        + "_-_" + aprendizado[i] + "_-_"+ agrupamentos[m]+"_-_" + ordenacao[j] + "_-_" + selecao[k] + "_-_" + classificadores[l] + "_-_exec_" + execucao;
+
+                                pathsTreinoTeste[execucao][0]
+                                        = System.getProperty("user.dir").concat(File.separator).
+                                        concat(folderName).concat(File.separator).concat("treino.arff");
+
+                                pathsTreinoTeste[execucao][1]
+                                        = System.getProperty("user.dir").concat(File.separator).
+                                        concat(folderName).concat(File.separator).concat("teste.arff");
+
+                                pathsTreinoTeste[execucao][2]
+                                        = System.getProperty("user.dir").concat(File.separator).
+                                        concat(folderName).concat(File.separator).concat("fronteira.arff");
+
+                                pathsTreinoTeste[execucao][3]
+                                        = System.getProperty("user.dir").concat(File.separator).
+                                        concat(folderName).concat(File.separator).concat("amostrasT.arff");
+
+                                pathsTreinoTeste[execucao][4]
+                                        = System.getProperty("user.dir").concat(File.separator).
+                                        concat(folderName).concat(File.separator).concat("vizinhosT.arff");
+
+                                //aprendizado
+                                switch (aprendizado[i]) {
+                                    case "rand":
+                                        new LearnRandom().random(z2, z3, XNUMCLASSES,
+                                                classificadores[l]);
+                                        break;
+                                    case "act":
+                                        int kVizinhos = z2.numClasses() * XNUMCLASSES;
+                                        new LearnActive().active(z2, z3, XNUMCLASSES, kVizinhos,
+                                                ordenacao[j], classificadores[l], selecao[k], fronteiras,
+                                                amostrasT, vizinhosT, agrupamentos[m]);
+                                        break;
+                                }
+                                mov.mvExecucao(folderName, classificadores[l]);
+
+                                System.err.println("Final execução " + (execucao + 1) + "/" + MAX_EXECS + "\n");
                             }
-
-                            z2.setClassIndex(z2.numAttributes() - 1);
-                            z3.setClassIndex(z3.numAttributes() - 1);
-
-                            folderName = props.getProperty("prop.inputNormal").split("/")[props.getProperty("prop.inputNormal").split("/").length - 1].split(".arff")[0]
-                                    + "_-_" + aprendizado[i] + "_-_" + ordenacao[j] + "_-_" + selecao[k] + "_-_" + classificadores[l] + "_-_exec_" + execucao;
-
-                            pathsTreinoTeste[execucao][0]
-                                    = System.getProperty("user.dir").concat(File.separator).
-                                    concat(folderName).concat(File.separator).concat("treino.arff");
-
-                            pathsTreinoTeste[execucao][1]
-                                    = System.getProperty("user.dir").concat(File.separator).
-                                    concat(folderName).concat(File.separator).concat("teste.arff");
-
-                            pathsTreinoTeste[execucao][2]
-                                    = System.getProperty("user.dir").concat(File.separator).
-                                    concat(folderName).concat(File.separator).concat("fronteira.arff");
-
-                            pathsTreinoTeste[execucao][3]
-                                    = System.getProperty("user.dir").concat(File.separator).
-                                    concat(folderName).concat(File.separator).concat("amostrasT.arff");
-
-                            pathsTreinoTeste[execucao][4]
-                                    = System.getProperty("user.dir").concat(File.separator).
-                                    concat(folderName).concat(File.separator).concat("vizinhosT.arff");
-
-                            //aprendizado
-                            switch (aprendizado[i]) {
-                                case "rand":
-                                    new LearnRandom().random(z2, z3, XNUMCLASSES,
-                                            classificadores[l]);
-                                    break;
-                                case "act":
-                                    int kVizinhos = z2.numClasses() * XNUMCLASSES;
-                                    new LearnActive().active(z2, z3, XNUMCLASSES, kVizinhos,
-                                            ordenacao[j], classificadores[l], selecao[k], fronteiras,
-                                            amostrasT, vizinhosT);
-                                    break;
+                            if (aprendizado[i].equals("rand")) {
+                                break loop_act;
                             }
-                            mov.mvExecucao(folderName, classificadores[l]);
-
-                            System.err.println("Final execução " + (execucao + 1) + "/" + MAX_EXECS + "\n");
+                            INPUT_MANUAL = true;
                         }
-                        if(aprendizado[i].equals("rand")){
-                            break loop_act;
-                        }
-                        INPUT_MANUAL = true;
                     }
                 }
             }
