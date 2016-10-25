@@ -19,14 +19,15 @@ import weka.core.Instances;
  * @author guilherme
  */
 public class ClassificadorSVM {
-    
-    public ClassificadorSVM(){}
-    
-    public Classifier makeTheSteps(Instances raizes, Instances z3){
-        
+
+    public ClassificadorSVM() {
+    }
+
+    public Classifier makeTheSteps(Instances raizes, Instances z3) {
+
         Classifier classifier = train(raizes);
-        classify(classifier,raizes, z3);
-        
+        classify(classifier, raizes, z3);
+
         return classifier;
     }
 
@@ -34,16 +35,18 @@ public class ClassificadorSVM {
 
         System.err.print("Treinando classificador ... ");
         long init = System.nanoTime();
-        
+
         Classifier classificador = new SMO();
         try {
             classificador.buildClassifier(raizes);
+            weka.core.SerializationHelper.write("model.model", classificador);
         } catch (Exception ex) {
             Logger.getLogger(ClassificadorSVM.class.getName()).log(Level.SEVERE, null, ex);
         }
         long end = System.nanoTime();
         long diff = end - init;
         double time = (diff / 1000000000.0);
+        
         new IOText().save(System.getProperty("user.dir").concat(File.separator),
                 "tempoTreino", String.valueOf(time));
         System.err.println("feito");
@@ -54,7 +57,7 @@ public class ClassificadorSVM {
     protected void classify(Classifier classificador, Instances raizes, Instances z3) {
         System.err.print("Testando classificador ... ");
         long init = System.nanoTime();
-        
+
         Evaluation eval = null;
         try {
             eval = new Evaluation(raizes);
@@ -72,5 +75,5 @@ public class ClassificadorSVM {
                 "acc", String.valueOf(acc));
         System.err.println("feito");
     }
- 
+
 }

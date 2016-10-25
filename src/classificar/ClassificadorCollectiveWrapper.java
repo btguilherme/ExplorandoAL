@@ -39,6 +39,7 @@ public class ClassificadorCollectiveWrapper implements IClassificadorSemiSuper {
             // build classifier
             if(unlabeled == null){
                 wrapper.buildClassifier(raizes);
+                weka.core.SerializationHelper.write("model.model", wrapper);
             }else{
                 wrapper.buildClassifier(raizes, unlabeled);
             }

@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,16 +25,16 @@ import utils.RunCommand;
 import weka.clusterers.AbstractClusterer;
 import weka.clusterers.Cobweb;
 import weka.clusterers.EM;
-import weka.clusterers.RandomizableClusterer;
+import weka.clusterers.FarthestFirst;
 import weka.clusterers.SimpleKMeans;
 import weka.core.DenseInstance;
 import weka.core.EuclideanDistance;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.neighboursearch.BallTree;
+import weka.core.neighboursearch.CoverTree;
 import weka.core.neighboursearch.KDTree;
-import weka.core.pmml.jaxbbindings.Cluster;
 import weka.filters.Filter;
-import weka.gui.beans.Clusterer;
 
 /**
  *
@@ -291,7 +290,7 @@ public class LearnActive extends Learn {
                 amostrasSelecionadasUnlabeled = selecionaUnlabeled(2 * numInstancias, amostrasSelecionadasUnlabeled);
             }
             new IOArff().saveArffFile(amostrasSelecionadasUnlabeled, "unlabeled");
-            System.out.println(raizes.numInstances() + "+" + amostrasSelecionadasUnlabeled.numInstances() + "=" + (raizes.numInstances() + amostrasSelecionadasUnlabeled.numInstances()));
+            //System.out.println(raizes.numInstances() + "+" + amostrasSelecionadasUnlabeled.numInstances() + "=" + (raizes.numInstances() + amostrasSelecionadasUnlabeled.numInstances()));
 
             classifica(classificador, raizes, z3, amostrasSelecionadasUnlabeled);
 
@@ -312,7 +311,7 @@ public class LearnActive extends Learn {
     }
 
     /**
-     * Método responsável por criar um cluster (k-means), dado
+     * Método responsável por criar um cluster, dado
      * <i>numClusteres</i>
      * e conjunto de dados <i>Z2</i>.
      *
@@ -338,7 +337,7 @@ public class LearnActive extends Learn {
                 }
                 break;
 
-            case "EM": {
+            case "EM":
                 try {
                     options = weka.core.Utils.splitOptions("-N " + numClusteres + " -I 100 -S 100");
                     clusterer = new EM();
@@ -346,8 +345,16 @@ public class LearnActive extends Learn {
                 } catch (Exception ex) {
                     Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
                 }
-            }
-            break;
+                break;
+                
+            case "FarthestFirst":
+                try {
+                    options = weka.core.Utils.splitOptions("-N " + numClusteres + " -S 1");
+                    clusterer = new FarthestFirst();
+                } catch (Exception ex) {
+                    Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                break;
         }
 
         try {
@@ -396,14 +403,18 @@ public class LearnActive extends Learn {
             for (double[][] centroidTemp : centroidsTemp) {
                 double[] dblInst = new double[centroidTemp.length];
                 for (int i = 0; i < centroidTemp.length; i++) {
-                    double [] centroidMeans = centroidTemp[i];
+                    double[] centroidMeans = centroidTemp[i];
                     dblInst[i] = centroidMeans[0];
                 }
                 Instance inst = new DenseInstance(1, dblInst);
                 centroids.add(inst);
             }
+        } else if (clusterer instanceof FarthestFirst) {
+            FarthestFirst farth = (FarthestFirst) clusterer;
+            centroids = farth.getClusterCentroids();
+
         }
-        
+
 //        for (int i = 0; i < centroids.numInstances(); i++) {
 //            System.out.println(centroids.instance(i).toString());
 //        }
@@ -420,7 +431,7 @@ public class LearnActive extends Learn {
                 Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        
+
         return raizes;
     }
 
@@ -518,7 +529,7 @@ public class LearnActive extends Learn {
         Instances z2SemClasse = removeAtributoClasse(z2);
 
         for (int i = 0; i < z2SemClasse.numInstances(); i++) {
-            System.out.println(i);
+            //System.out.println(i);
             Instance t = z2SemClasse.instance(i);
             int clusterT = 0;
 
@@ -528,18 +539,18 @@ public class LearnActive extends Learn {
                 Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
             }
             Instances vizinhos = null;
-            KDTree tree = new KDTree();
+            
             EuclideanDistance df = new EuclideanDistance(z2SemClasse);
             df.setDontNormalize(true);
+            KDTree tree = new KDTree();
             try {
                 tree.setInstances(z2SemClasse);
                 tree.setDistanceFunction(df);
                 vizinhos = tree.kNearestNeighbours(t, kVizinhos);
-                //vizinhos.setClassIndex(vizinhos.numAttributes() - 1);
             } catch (Exception ex) {
                 Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
             }
-
+            
             for (int j = 0; j < vizinhos.numInstances(); j++) {
                 int clusterV = 0;
                 try {

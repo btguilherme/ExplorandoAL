@@ -19,6 +19,7 @@ import io.IOText;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,7 +27,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import main.Movimentacao;
 import weka.classifiers.Classifier;
+import weka.core.Attribute;
+import weka.core.Instance;
 import weka.core.Instances;
+import weka.filters.Filter;
+import weka.filters.supervised.attribute.AddClassification;
+import weka.filters.unsupervised.attribute.Add;
 
 /**
  *
@@ -79,7 +85,7 @@ public class Learn {
     protected ClassificadorFilteredCollectiveClassifier classificadorFilteredCollectiveClassifier;
 
     protected Set<String> classesConhecidas;
-    
+
     protected boolean isSupervisionado;
 
     protected void classifica(String classificador, Instances raizes, Instances z3, Instances unlabeled) {
@@ -152,6 +158,79 @@ public class Learn {
 
     protected int verificaRaizesClassificadasErradas(Instances amostras, Classifier classificador) {
         int contador = 0;
+        
+//        //recupera os valores do att class das amostras
+//        Attribute atributosDasAmostras = amostras.classAttribute();
+//        Enumeration<Object> atributosAux = atributosDasAmostras.enumerateValues();
+//        
+//        //passa os valores encontrados para uma lista
+//        List<String> temp = new ArrayList<>();
+//        while (atributosAux.hasMoreElements()) {
+//            String att = (String) atributosAux.nextElement();
+//            temp.add(att);
+//        }
+//        
+//        //da lista para um obj do tipo String
+//        String atributos = "";
+//        for (int i = 0; i < temp.size(); i++) {
+//            atributos = atributos.concat(temp.get(i));
+//            if(i != temp.size() - 1){
+//                atributos = atributos.concat(",");
+//            }
+//        }
+//        
+//        //cria um filtro para adicionar um att do tipo Classification
+//        Add filter = new Add();
+//        filter.setAttributeIndex("last");
+//        filter.setNominalLabels(atributos);
+//        filter.setAttributeName("Classification");
+//        
+//        Instances amostrasComPredicao = new Instances(amostras);
+//        try {
+//            filter.setInputFormat(amostrasComPredicao);
+//            amostrasComPredicao = Filter.useFilter(amostrasComPredicao, filter);
+//        } catch (Exception ex) {
+//            Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        
+//        //adiciona o valr predito no arff
+//        AddClassification add = new AddClassification();
+//        add.setClassifier(classifier);
+//        add.setOutputClassification(true);
+//        add.setOutputDistribution(false);
+//        add.setOutputErrorFlag(false);
+//        add.setRemoveOldClass(false);
+//        
+//        try {
+//            for (int i = 0; i < amostras.numInstances(); i++) {
+//                double pred = classificador.classifyInstance(amostras.instance(i));
+//                String actual = amostras.classAttribute().value((int) amostras.instance(i).classValue());
+//                String predicted = amostras.classAttribute().value((int) pred);
+//                
+//                amostrasComPredicao.instance(i).setValue(amostrasComPredicao.numAttributes()-1, actual);
+//
+//                add.setInputFormat(amostrasComPredicao);
+//                add.input(amostrasComPredicao.instance(i));
+//
+//
+//                if (!actual.equals(predicted)) {
+//                    contador++;
+//                }
+//            }
+//        } catch (Exception ex) {
+//            Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//
+//        System.out.println(amostrasComPredicao.toString());
+//        
+//
+//        System.exit(contador);
+
+        
+        
+        
+        
+        
         try {
             for (int i = 0; i < amostras.numInstances(); i++) {
                 double pred = classificador.classifyInstance(amostras.instance(i));
@@ -165,6 +244,8 @@ public class Learn {
         } catch (Exception ex) {
             Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        
         return contador;
     }
 
@@ -384,7 +465,7 @@ public class Learn {
         }
         return classes.size();
     }
-    
+
     protected boolean tipoClassificador(String classificador) {
         boolean ret = false;
         switch (classificador) {

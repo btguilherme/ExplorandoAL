@@ -19,6 +19,11 @@ public class Raizes {
 
     public List<Instances> shuffle(Instances z2, int xNumClasses){
         int numInstancias = z2.attribute(z2.numAttributes() - 1).numValues() * xNumClasses;
+        
+        if(numInstancias > z2.numInstances()){
+            numInstancias = z2.numInstances();
+        }
+        
         Instances z1 = new Instances(z2, numInstancias);
         
         Instances aux = new Instances(z2, z2.numInstances());

@@ -36,6 +36,7 @@ public class ClassificadorYATSI extends ClassificadorLLGC {
             // build classifier
             if (unlabeled == null) {
                 yatsi.buildClassifier(raizes, raizes);
+                weka.core.SerializationHelper.write("model.model", yatsi);
             } else {
                 yatsi.buildClassifier(raizes, unlabeled);
             }

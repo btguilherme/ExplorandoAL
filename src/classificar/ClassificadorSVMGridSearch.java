@@ -67,6 +67,7 @@ public class ClassificadorSVMGridSearch extends ClassificadorSVM {
             gs.buildClassifier(raizes);
             classificador = gs.getBestClassifier();
             classificador.buildClassifier(raizes);
+            weka.core.SerializationHelper.write("model.model", classificador);
         } catch (Exception ex) {
             Logger.getLogger(ClassificadorSVMGridSearch.class.getName()).log(Level.SEVERE, null, ex);
         }

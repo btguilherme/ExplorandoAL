@@ -26,35 +26,46 @@ public class NovoResultados {
                 = new FileInputStream(System.getProperty("user.dir").concat(File.separator)
                         + "/src/properties/propriedades.properties");
         props.load(file);
-        
+
         String OPC_APRENDIZADO = props.getProperty("prop.aprendizado");
         String ORDENACAO = props.getProperty("prop.ordenacao");
         String CLASSIFICADOR = props.getProperty("prop.classificador");
         String METODOSELECAO = props.getProperty("prop.selecaoFronteira");
-        
+        String AGRUPAMENTO = props.getProperty("prop.agrupamento");
+
         String[] aprendizado = OPC_APRENDIZADO.split(" ");
         String[] ordenacao = ORDENACAO.split(" ");
         String[] selecao = METODOSELECAO.split(" ");
         String[] classificadores = CLASSIFICADOR.split(" ");
-        
-        for (int i = 0; i < aprendizado.length; i++) {
-            for (int j = 0; j < ordenacao.length; j++) {
-                for (int k = 0; k < selecao.length; k++) {
-                    for (int l = 0; l < classificadores.length; l++) {
-                        
-                        String folderName = props.getProperty("prop.inputNormal").split("/")[props.getProperty("prop.inputNormal").split("/").length - 1].split(".arff")[0]
-                                    + "_-_" + aprendizado[i] + "_-_" + ordenacao[j] + "_-_" + selecao[k] + "_-_" + classificadores[l] + "_-_exec_";
+        String[] agrupamentos = AGRUPAMENTO.split(" ");
 
-                        String[] params = folderName.split("_-_");
-                        
-                        System.out.println("Dataset: "+params[0]);
-                        System.out.println("Aprendizado: "+params[1]);
-                        System.out.println("Organização amostras de fronteira: "+params[2]);
-                        System.out.println("Seleção das amostras de fronteira: "+params[3]);
-                        System.out.println("Classificador: "+params[4]);
-                        
-                        calc(folderName);
-                        Thread.sleep(100);
+        for (int i = 0; i < aprendizado.length; i++) {
+            for (int l = 0; l < classificadores.length; l++) {
+                
+                loop_act:
+                for (int j = 0; j < ordenacao.length; j++) {
+                    for (int k = 0; k < selecao.length; k++) {
+
+                        for (int m = 0; m < agrupamentos.length; m++) {
+
+                            String folderName = props.getProperty("prop.inputNormal").split("/")[props.getProperty("prop.inputNormal").split("/").length - 1].split(".arff")[0]
+                                    + "_-_" + aprendizado[i] + "_-_" + agrupamentos[m] + "_-_" + ordenacao[j] + "_-_" + selecao[k] + "_-_" + classificadores[l] + "_-_exec_";
+
+                            String[] params = folderName.split("_-_");
+
+                            System.out.println("Dataset: " + params[0]);
+                            System.out.println("Aprendizado: " + params[1]);
+                            System.out.println("Agrupamento: " + params[2]);
+                            System.out.println("Organização amostras de fronteira: " + params[3]);
+                            System.out.println("Seleção das amostras de fronteira: " + params[4]);
+                            System.out.println("Classificador: " + params[5]);
+
+                            calc(folderName);
+                            Thread.sleep(50);
+                            if (aprendizado[i].equals("rand")) {
+                                break loop_act;
+                            }
+                        }
                     }
                 }
             }
@@ -70,13 +81,13 @@ public class NovoResultados {
      * exemplo, <i>opfsuper</i>, <i>svmcross</i>, <i>YATSI_results</i> etc
      */
     public static void calc(String folderName) {
-        
+
         //caminho para a pasta com os resultados
         //lista os arquivos da pasta root
         int contaExecucoes = verificaQntdPastas(
                 System.getProperty("user.dir").concat(File.separator),
                 folderName);
-        
+
         int contaIteracoes = considerarIteracoes(folderName);
         
         List<Double> sumAccs = new ArrayList<>();
@@ -96,7 +107,7 @@ public class NovoResultados {
         for (int i = 0; i < contaExecucoes; i++) {
 
             String pathExec = System.getProperty("user.dir").concat(File.separator)
-                    .concat(folderName+""+ i).concat(File.separator);
+                    .concat(folderName + "" + i).concat(File.separator);
 
             List<Double> accsIt = new ArrayList<>();
             List<Double> tTestsIt = new ArrayList<>();
@@ -135,12 +146,12 @@ public class NovoResultados {
                     sumKnowns.add(knownClasses);
                     sumWrongClassifs.add(wrongClassif);
                 } else {
-                    sumAccs.set(j, sumAccs.get(j) + acc);
-                    sumTTests.set(j, sumTTests.get(j) + tTest);
-                    sumTTrains.set(j, sumTTrains.get(j) + tTrain);
-                    sumTSelecs.set(j, sumTSelecs.get(j) + tSelec);
-                    sumKnowns.set(j, sumKnowns.get(j) + knownClasses);
-                    sumWrongClassifs.set(j, sumWrongClassifs.get(j) + wrongClassif);
+                    sumAccs.set(j, (sumAccs.get(j) + acc));
+                    sumTTests.set(j, (sumTTests.get(j) + tTest));
+                    sumTTrains.set(j, (sumTTrains.get(j) + tTrain));
+                    sumTSelecs.set(j, (sumTSelecs.get(j) + tSelec));
+                    sumKnowns.set(j, (sumKnowns.get(j) + knownClasses));
+                    sumWrongClassifs.set(j, (sumWrongClassifs.get(j) + wrongClassif));
                 }
 
             }
@@ -160,7 +171,7 @@ public class NovoResultados {
         List<Double> dpt_selec = desvioPadrao(contaIteracoes, contaExecucoes, todosValoresTSelec, sumTSelecs);
         List<Double> dpt_Known = desvioPadrao(contaIteracoes, contaExecucoes, todosValoresKnown, sumKnowns);
         List<Double> dpt_WrongClassif = desvioPadrao(contaIteracoes, contaExecucoes, todosValoresWrongClassif, sumWrongClassifs);
-        
+
         //imprime certo para fazer contas/graficos (medias e desvios separados)
 //        System.out.println("AVERAGES");
 //        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)");
@@ -173,13 +184,12 @@ public class NovoResultados {
 //        for (int i = 0; i < dpAcc.size(); i++) {
 //            System.out.printf("%d\t%.2f\t%.6f\t%.6f\t%.6f\t%.2f\t%.2f\n", (i + 1), dpAcc.get(i), dpt_test.get(i), dpt_train.get(i), dpt_selec.get(i), dpt_Known.get(i), dpt_WrongClassif.get(i));
 //        }
-        
         //imprime de um jeito bom para ler (media +/- desvio na mesma coluna)
         System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)");
         for (int i = 0; i < sumAccs.size(); i++) {
             System.out.printf("%d\t%.2f ± %.2f\t%.6f ± %.6f\t%.6f ± %.6f\t%.6f ± %.6f\t%.2f ± %.2f\t%.2f ± %.2f\n",
                     (i + 1),
-                    (sumAccs.get(i) / (contaExecucoes)), dpAcc.get(i), 
+                    (sumAccs.get(i) / (contaExecucoes)), dpAcc.get(i),
                     (sumTTests.get(i) / (contaExecucoes)), dpt_test.get(i),
                     (sumTTrains.get(i) / (contaExecucoes)), dpt_train.get(i),
                     (sumTSelecs.get(i) / (contaExecucoes)), dpt_selec.get(i),
@@ -187,7 +197,7 @@ public class NovoResultados {
                     (sumWrongClassifs.get(i) / (contaExecucoes)), dpt_WrongClassif.get(i)
             );
         }
-        
+
         System.out.println("\n\n");
 
     }
@@ -211,34 +221,34 @@ public class NovoResultados {
         List<Double> dp = new ArrayList<>();
         for (int i = 0; i < indiceIt; i++) {
             double sumPow = 0.0;
-            for (int j = 0; j < indiceExec - 1; j++) {
-                sumPow += Math.pow((todosValores.get(j).get(i) - sum.get(i) / (indiceExec)), 2);
+            for (int j = 0; j < indiceExec; j++) {
+                sumPow += Math.pow((todosValores.get(j).get(i) - (sum.get(i) / indiceExec)  ), 2);
             }
-            double var = (sumPow / (indiceExec -1 ));
+            double var = (sumPow / (indiceExec));
             dp.add(Math.sqrt(var));
         }
         return dp;
     }
 
     private static int considerarIteracoes(String folderName) {
-        
+
         int ret = Integer.MAX_VALUE;
-        
+
         int numExecs = verificaQntdPastas(System.getProperty("user.dir").concat(File.separator), folderName);
-        
+
         for (int i = 0; i < numExecs; i++) {
             int numIts = verificaQntdPastas(System.getProperty("user.dir")
-                    .concat(File.separator).concat(folderName+i)
+                    .concat(File.separator).concat(folderName + i)
                     .concat(File.separator), "it");
-            
-            if(numIts < ret){
+
+            if (numIts < ret) {
                 ret = numIts;
             }
-            
+
         }
-        
+
         return ret;
-        
+
     }
 
 }

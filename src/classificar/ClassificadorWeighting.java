@@ -34,6 +34,7 @@ public class ClassificadorWeighting extends ClassificadorCollectiveWrapper {
             // build classifier
             if (unlabeled == null) {
                 weighting.buildClassifier(raizes);
+                weka.core.SerializationHelper.write("model.model", weighting);
             } else {
                 weighting.buildClassifier(raizes, unlabeled);
             }

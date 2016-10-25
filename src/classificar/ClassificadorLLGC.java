@@ -39,6 +39,7 @@ public class ClassificadorLLGC implements IClassificadorSemiSuper {
         try {
             // build classifier
             llgc.buildClassifier(raizes, unlabeled);
+            weka.core.SerializationHelper.write("model.model", llgc);
         } catch (Exception ex) {
             Logger.getLogger(ClassificadorLLGC.class.getName()).log(Level.SEVERE, null, ex);
         }

@@ -34,6 +34,7 @@ public class ClassificadorFilteredCollectiveClassifier extends ClassificadorLLGC
         try {
             // build classifier
             fcc.buildClassifier(raizes, unlabeled);
+            weka.core.SerializationHelper.write("model.model", fcc);
         } catch (Exception ex) {
             Logger.getLogger(ClassificadorFilteredCollectiveClassifier.class.getName()).log(Level.SEVERE, null, ex);
         }
