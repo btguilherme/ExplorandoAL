@@ -31,8 +31,6 @@ import weka.core.DenseInstance;
 import weka.core.EuclideanDistance;
 import weka.core.Instance;
 import weka.core.Instances;
-import weka.core.neighboursearch.BallTree;
-import weka.core.neighboursearch.CoverTree;
 import weka.core.neighboursearch.KDTree;
 import weka.filters.Filter;
 
@@ -211,13 +209,16 @@ public class LearnActive extends Learn {
         if (paramFronteiras == null) {
             //System.out.println("nao carregou externamente");
             selecionaAmostrasDeFronteira(clusterer, z2, kVizinhos);
+            
+            //ordena amostras de fronteira
+            ordenacao(ordenacao, z2);
         } else {
             //System.out.println("!!!!!!!!!!! carregou externamente!!!!!!!!!!!!!!!!!!!!");
             this.fronteiras = paramFronteiras;
             this.amostrasT = paramAmostrasT;
             this.vizinhosT = paramVizinhosT;
         }
-
+        
 //        for (int i = 0; i < fronteiras.size(); i++) {
 //            System.out.println(fronteiras.get(i).getAmostra().toString());
 //        }
@@ -256,9 +257,6 @@ public class LearnActive extends Learn {
         outClassesConhecidas.add(classesConhecidas.toString());
         new IOText().save(System.getProperty("user.dir").concat(File.separator),
                 "classesConhecidas", outClassesConhecidas);
-
-        //ordena amostras de fronteira
-        ordenacao(ordenacao, z2);
 
         new IOText().save(System.getProperty("user.dir").concat(File.separator),
                 "tempoSelecao", "0");
@@ -366,18 +364,6 @@ public class LearnActive extends Learn {
 
         return clusterer;
 
-//        
-//        SimpleKMeans clusterer = new SimpleKMeans();
-//        //clusterer.setSeed(10);
-//        //clusterer.setPreserveInstancesOrder(true);
-//        try {
-//            //clusterer.setNumClusters(numClusteres);
-//            //clusterer.setMaxIterations(500);
-//            clusterer.buildClusterer(z2SemClasse);
-//        } catch (Exception ex) {
-//            Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        return clusterer;
     }
 
     private Instances raizesProximasAoCentroide(Instances z2, AbstractClusterer clusterer) {
@@ -529,7 +515,6 @@ public class LearnActive extends Learn {
         Instances z2SemClasse = removeAtributoClasse(z2);
 
         for (int i = 0; i < z2SemClasse.numInstances(); i++) {
-            //System.out.println(i);
             Instance t = z2SemClasse.instance(i);
             int clusterT = 0;
 
