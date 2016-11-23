@@ -47,7 +47,7 @@ public class LearnRandom extends Learn {
                     raizes.add(z2.instance(i));
                 }
                 for (int i = 0; i < numInstancias; i++) {
-                    z2.delete(i);
+                    z2.delete(0);
                 }
             }
             
@@ -59,25 +59,31 @@ public class LearnRandom extends Learn {
             new IOText().save(System.getProperty("user.dir").concat(File.separator),
                     "classesConhecidas", outClassesConhecidas);
 
-            ioArff.saveArffFile(raizes, "raizes" + iteration);
-            conjuntos = r.shuffle(z2, 2 * xNumClasses);
+            conjuntos = r.shuffle(z2, xNumClasses/2);
             Instances novasAmostras = conjuntos.get(0);
+            
+//            System.out.println(novasAmostras.numInstances());
+//            System.exit(iteration);
             
             z2 = conjuntos.get(1);
             if (isSupervisionado) {
-                for (int i = 0; i < novasAmostras.numInstances(); i++) {
-                    raizes.add(novasAmostras.instance(i));
-                }
+//                if (iteration != 0) {
+//                    for (int i = 0; i < novasAmostras.numInstances(); i++) {
+//                        raizes.add(novasAmostras.instance(i));
+//                    }
+//                }
+                
             } else {
                 for (int i = 0; i < novasAmostras.numInstances(); i++) {
                     amostrasSelecionadasUnlabeled.add(novasAmostras.instance(i));
                 }
-                new IOArff().saveArffFile(amostrasSelecionadasUnlabeled, "unlabeled");
             }
+            new IOArff().saveArffFile(amostrasSelecionadasUnlabeled, "unlabeled");
+            ioArff.saveArffFile(raizes, "raizes" + iteration);
 
             classifica(classifiers, raizes, z3, amostrasSelecionadasUnlabeled);
 
-            //System.out.println(raizes.numInstances() + "+" + amostrasSelecionadasUnlabeled.numInstances() + "=" + (raizes.numInstances() + amostrasSelecionadasUnlabeled.numInstances()));
+            System.out.println(raizes.numInstances() + "+" + amostrasSelecionadasUnlabeled.numInstances() + "=" + (raizes.numInstances() + amostrasSelecionadasUnlabeled.numInstances()));
 
             salvaDados(classifiers, iteration);
 

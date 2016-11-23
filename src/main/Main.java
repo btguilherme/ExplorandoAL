@@ -157,7 +157,7 @@ public class Main {
                                                 classificadores[l]);
                                         break;
                                     case "act":
-                                        int kVizinhos = z2.numClasses() * XNUMCLASSES;
+                                        int kVizinhos = z2.numClasses()/2;// * XNUMCLASSES;
                                         new LearnActive().active(z2, z3, XNUMCLASSES, kVizinhos,
                                                 ordenacao[j], classificadores[l], selecao[k], fronteiras,
                                                 amostrasT, vizinhosT, agrupamentos[m]);

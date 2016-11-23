@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import weka.classifiers.Classifier;
 import weka.classifiers.collective.meta.YATSI;
+import weka.classifiers.functions.SMO;
 import weka.core.Instances;
 
 /**
@@ -30,6 +31,7 @@ public class ClassificadorYATSI extends ClassificadorLLGC {
         long init = System.nanoTime();
 
         YATSI yatsi = new YATSI();
+        yatsi.setClassifier(new SMO());
         yatsi.setKNN(10);
         yatsi.setNoWeights(true);
         try {

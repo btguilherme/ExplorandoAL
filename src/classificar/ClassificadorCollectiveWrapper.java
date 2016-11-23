@@ -12,6 +12,9 @@ import java.util.logging.Logger;
 import weka.classifiers.Classifier;
 import weka.classifiers.CollectiveEvaluation;
 import weka.classifiers.collective.meta.CollectiveWrapper;
+import weka.classifiers.functions.SMO;
+import weka.classifiers.trees.J48;
+import weka.classifiers.trees.RandomForest;
 import weka.core.Instances;
 
 /**
@@ -34,6 +37,7 @@ public class ClassificadorCollectiveWrapper implements IClassificadorSemiSuper {
         long init = System.nanoTime();
 
         CollectiveWrapper wrapper = new CollectiveWrapper();
+        wrapper.setClassifier(new SMO());
         
         try {
             // build classifier

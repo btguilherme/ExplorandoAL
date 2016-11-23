@@ -11,6 +11,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import weka.classifiers.Classifier;
 import weka.classifiers.collective.meta.Weighting;
+import weka.classifiers.functions.SMO;
+import weka.classifiers.trees.RandomForest;
 import weka.core.Instances;
 
 /**
@@ -29,6 +31,10 @@ public class ClassificadorWeighting extends ClassificadorCollectiveWrapper {
         long init = System.nanoTime();
 
         Weighting weighting = new Weighting();
+        Classifier[] classsifiers = new Classifier[2];
+        classsifiers[0] = new SMO();
+        classsifiers[1] = new RandomForest();
+        weighting.setClassifiers(classsifiers);
 
         try {
             // build classifier
