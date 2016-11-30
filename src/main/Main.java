@@ -40,28 +40,28 @@ public class Main {
         String CLASSIFICADOR = props.getProperty("prop.classificador");
         String METODOSELECAO = props.getProperty("prop.selecaoFronteira");
         String AGRUPAMENTO = props.getProperty("prop.agrupamento");
-
+     
         Movimentacao mov = new Movimentacao();
         IOArff io = new IOArff();
 
         Instances z2 = null, z3 = null;
         List<BeanAmostra> fronteiras = null, amostrasT = null, vizinhosT = null;
 
-        if (INPUT_MANUAL == true) {
-            List<Object> temp
-                    = inputManual(
-                            props.getProperty("prop.inputManual.treino"),
-                            props.getProperty("prop.inputManual.teste"),
-                            props.getProperty("prop.inputManual.fronteira"),
-                            props.getProperty("prop.inputManual.amostrasT"),
-                            props.getProperty("prop.inputManual.vizinhosT")
-                    );
-            z2 = (Instances) temp.get(0);
-            z3 = (Instances) temp.get(1);
-            fronteiras = (List<BeanAmostra>) temp.get(2);
-            amostrasT = (List<BeanAmostra>) temp.get(3);
-            vizinhosT = (List<BeanAmostra>) temp.get(4);
-        }
+//        if (INPUT_MANUAL == true) {
+//            List<Object> temp
+//                    = inputManual(
+//                            props.getProperty("prop.inputManual.treino"),
+//                            props.getProperty("prop.inputManual.teste"),
+//                            props.getProperty("prop.inputManual.fronteira"),
+//                            props.getProperty("prop.inputManual.amostrasT"),
+//                            props.getProperty("prop.inputManual.vizinhosT")
+//                    );
+//            z2 = (Instances) temp.get(0);
+//            z3 = (Instances) temp.get(1);
+//            fronteiras = (List<BeanAmostra>) temp.get(2);
+//            amostrasT = (List<BeanAmostra>) temp.get(3);
+//            vizinhosT = (List<BeanAmostra>) temp.get(4);
+//        }
 
         String[] aprendizado = OPC_APRENDIZADO.split(" ");
         String[] ordenacao = ORDENACAO.split(" ");
@@ -81,7 +81,13 @@ public class Main {
                         for (int m = 0; m < agrupamentos.length; m++) {
 
                             for (int execucao = 0; execucao < MAX_EXECS; execucao++) {
-
+                                
+                                System.err.print(aprendizado[i]+",");
+                                System.err.print(classificadores[l]+",");
+                                System.err.print(ordenacao[j]+",");
+                                System.err.print(selecao[k]+",");
+                                System.err.println(agrupamentos[m]);
+                                
                                 if (INPUT_MANUAL == false) {
                                     //split  
                                     split(props.getProperty("prop.inputNormal"),
@@ -99,11 +105,12 @@ public class Main {
                                     List<Object> temp;
                                     if (Boolean.valueOf(props.getProperty("prop.inputManual")) == true) {
                                         temp
-                                                = inputManual(props.getProperty("prop.inputManual.treino"),//treino
-                                                        props.getProperty("prop.inputManual.teste"),//teste
-                                                        props.getProperty("prop.inputManual.fronteira"),//fronteira
-                                                        props.getProperty("prop.inputManual.amostrasT"),//amostrasT
-                                                        props.getProperty("prop.inputManual.vizinhosT")//vizinhosT
+                                                = inputManual(
+                                                        props.getProperty("prop.inputManual.path").concat(execucao+"/treino.arff"),//treino
+                                                        props.getProperty("prop.inputManual.path").concat(execucao+"/teste.arff"),//teste
+                                                        props.getProperty("prop.inputManual.path").concat(execucao+"/fronteira.arff"),//fronteira
+                                                        props.getProperty("prop.inputManual.path").concat(execucao+"/amostrasT.arff"),//amostrasT
+                                                        props.getProperty("prop.inputManual.path").concat(execucao+"/vizinhosT.arff")//vizinhosT
                                                 );
                                     } else {
 

@@ -73,7 +73,7 @@ public class Learn {
 //            classifyUniverSVM(raizes, time, iteration, numClassesConhecidas, numCorrecoes);
 //        }
 //    }
-    protected Classifier classifier;
+    protected static Classifier classifier;
     protected ClassificadorSVM classificadorSVM;
     protected ClassificadorSVMGridSearch classificadorSVMGridSearch;
     protected ClassificadorOPF classificadorOPF;
@@ -124,7 +124,10 @@ public class Learn {
         classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
         new IOText().save(System.getProperty("user.dir").concat(File.separator),
                 "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
-
+    }
+    
+    public static Classifier getClassificador(){
+        return classifier;
     }
 
     protected void salvaDados(String classificador, int iteration) {

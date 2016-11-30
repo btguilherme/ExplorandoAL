@@ -79,6 +79,9 @@ public class LearnActive extends Learn {
             this.fronteiras = paramFronteiras;
             this.amostrasT = paramAmostrasT;
             this.vizinhosT = paramVizinhosT;
+            salvarFronteirasEmArquivo(fronteiras, z2);
+            new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "tempoSelecaoFronteira", String.valueOf(0.0));
         }
         
         //ordena amostras de fronteira
