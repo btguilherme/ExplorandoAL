@@ -124,6 +124,43 @@ public class Learn {
         classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
         new IOText().save(System.getProperty("user.dir").concat(File.separator),
                 "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
+        
+        
+        if(!isSupervisionado){
+            //errosPropagados()
+            List<Double> classeReal = new ArrayList<>();
+            List<Double> classePred = new ArrayList<>();
+            
+            for (int i = 0; i < unlabeled.numInstances(); i++) {
+                classeReal.add(unlabeled.instance(i).value(unlabeled.numAttributes() - 1));
+                try {
+                    classePred.add(classifier.classifyInstance(unlabeled.instance(i)));
+                    
+                } catch (Exception ex) {
+                    Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+                }                
+            }
+            
+            int cont = 0;
+            for (int i = 0; i < classeReal.size(); i++) {
+                if(!classeReal.get(i).equals(classePred.get(i))){
+                    cont++;
+                }
+            }
+            
+            double erro = (100 * cont)/unlabeled.numInstances();
+            
+            System.out.println(erro +"%");
+            
+            try {
+                Thread.sleep(400);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+            
+        }
+        
     }
     
     public static Classifier getClassificador(){

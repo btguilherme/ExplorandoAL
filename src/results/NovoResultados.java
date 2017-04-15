@@ -5,6 +5,7 @@
  */
 package results;
 
+import io.IODat;
 import io.IOText;
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,6 +20,9 @@ import java.util.Properties;
  * @author guilherme
  */
 public class NovoResultados {
+    
+    private static boolean gerarDat = true;
+    private static String datHeader;
 
     public static void main(String[] args) throws InterruptedException, FileNotFoundException, IOException {
         Properties props = new Properties();
@@ -59,6 +63,8 @@ public class NovoResultados {
                             System.out.println("Organização amostras de fronteira: " + params[3]);
                             System.out.println("Seleção das amostras de fronteira: " + params[4]);
                             System.out.println("Classificador: " + params[5]);
+                            
+                            datHeader = params[0]+"_"+params[1]+"_"+params[2]+"_"+params[3]+"_"+params[4]+"_"+params[5];
 
                             calc(folderName);
                             Thread.sleep(50);
@@ -173,30 +179,59 @@ public class NovoResultados {
         List<Double> dpt_WrongClassif = desvioPadrao(contaIteracoes, contaExecucoes, todosValoresWrongClassif, sumWrongClassifs);
 
         //imprime certo para fazer contas/graficos (medias e desvios separados)
-//        System.out.println("AVERAGES");
+        System.out.println("AVERAGES");
+        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)");
+        
+        List<String> conteudoAccs = new ArrayList<>();
+        List<String> conteudoTempTest = new ArrayList<>();
+        List<String> conteudoTempTreino = new ArrayList<>();
+        List<String> conteudoTempSelec = new ArrayList<>();
+        
+        for (int i = 0; i < sumAccs.size(); i++) {
+            System.out.printf("%d\t%.2f\t%.6f\t%.6f\t%.6f\t%.2f\t%.2f\n", (i + 1), (sumAccs.get(i) / (contaExecucoes)), (sumTTests.get(i) / (contaExecucoes)), (sumTTrains.get(i) / (contaExecucoes)), (sumTSelecs.get(i) / (contaExecucoes)), (sumKnowns.get(i) / (contaExecucoes)), (sumWrongClassifs.get(i) / (contaExecucoes)));
+            
+            if(gerarDat){
+                conteudoAccs.add(i+1+"\t"+(sumAccs.get(i) / (contaExecucoes))+"\t"+dpAcc.get(i));
+                conteudoTempTest.add(i+1+"\t"+(sumTTests.get(i) / (contaExecucoes))+"\t"+dpt_test.get(i));
+                conteudoTempTreino.add(i+1+"\t"+(sumTTrains.get(i) / (contaExecucoes))+"\t"+dpt_train.get(i));
+                conteudoTempSelec.add(i+1+"\t"+(sumTSelecs.get(i) / (contaExecucoes))+"\t"+dpt_selec.get(i));
+            }
+        }
+        if(gerarDat){
+            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_acc", conteudoAccs);
+            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_teste", conteudoTempTest);
+            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_treino", conteudoTempTreino);
+            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_selec", conteudoTempSelec);
+        }
+        
+        System.out.println("");
+        System.out.println("STD DEVS");
+        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)");
+        for (int i = 0; i < dpAcc.size(); i++) {
+            System.out.printf("%d\t%.2f\t%.6f\t%.6f\t%.6f\t%.2f\t%.2f\n", (i + 1), dpAcc.get(i), dpt_test.get(i), dpt_train.get(i), dpt_selec.get(i), dpt_Known.get(i), dpt_WrongClassif.get(i));
+        }
+        //imprime de um jeito bom para ler (media +/- desvio na mesma coluna)
 //        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)");
 //        for (int i = 0; i < sumAccs.size(); i++) {
-//            System.out.printf("%d\t%.2f\t%.6f\t%.6f\t%.6f\t%.2f\t%.2f\n", (i + 1), (sumAccs.get(i) / (contaExecucoes)), (sumTTests.get(i) / (contaExecucoes)), (sumTTrains.get(i) / (contaExecucoes)), (sumTSelecs.get(i) / (contaExecucoes)), (sumKnowns.get(i) / (contaExecucoes)), (sumWrongClassifs.get(i) / (contaExecucoes)));
+//            System.out.printf("%d\t%.2f ± %.2f\t%.6f ± %.6f\t%.6f ± %.6f\t%.6f ± %.6f\t%.2f ± %.2f\t%.2f ± %.2f\n",
+//                    (i + 1),
+//                    (sumAccs.get(i) / (contaExecucoes)), dpAcc.get(i),
+//                    (sumTTests.get(i) / (contaExecucoes)), dpt_test.get(i),
+//                    (sumTTrains.get(i) / (contaExecucoes)), dpt_train.get(i),
+//                    (sumTSelecs.get(i) / (contaExecucoes)), dpt_selec.get(i),
+//                    (sumKnowns.get(i) / (contaExecucoes)), dpt_Known.get(i),
+//                    (sumWrongClassifs.get(i) / (contaExecucoes)), dpt_WrongClassif.get(i)
+//            );
 //        }
-//        System.out.println("");
-//        System.out.println("STD DEVS");
-//        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)");
-//        for (int i = 0; i < dpAcc.size(); i++) {
-//            System.out.printf("%d\t%.2f\t%.6f\t%.6f\t%.6f\t%.2f\t%.2f\n", (i + 1), dpAcc.get(i), dpt_test.get(i), dpt_train.get(i), dpt_selec.get(i), dpt_Known.get(i), dpt_WrongClassif.get(i));
-//        }
-        //imprime de um jeito bom para ler (media +/- desvio na mesma coluna)
-        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)");
-        for (int i = 0; i < sumAccs.size(); i++) {
-            System.out.printf("%d\t%.2f ± %.2f\t%.6f ± %.6f\t%.6f ± %.6f\t%.6f ± %.6f\t%.2f ± %.2f\t%.2f ± %.2f\n",
-                    (i + 1),
-                    (sumAccs.get(i) / (contaExecucoes)), dpAcc.get(i),
-                    (sumTTests.get(i) / (contaExecucoes)), dpt_test.get(i),
-                    (sumTTrains.get(i) / (contaExecucoes)), dpt_train.get(i),
-                    (sumTSelecs.get(i) / (contaExecucoes)), dpt_selec.get(i),
-                    (sumKnowns.get(i) / (contaExecucoes)), dpt_Known.get(i),
-                    (sumWrongClassifs.get(i) / (contaExecucoes)), dpt_WrongClassif.get(i)
-            );
-        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         System.out.println("\n\n");
 

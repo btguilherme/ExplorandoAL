@@ -7,7 +7,6 @@ package selecao;
 
 import java.util.List;
 import learning.BeanAmostra;
-import weka.clusterers.SimpleKMeans;
 import weka.core.Instances;
 
 /**

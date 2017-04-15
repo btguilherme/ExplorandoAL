@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import selecao.Clu;
+import selecao.RDS;
 import selecao.Selecao;
 import selecao.SelecaoListas;
 import selecao.SelecaoOrdem;
@@ -45,6 +47,8 @@ public class LearnActive extends Learn {
     private boolean isFronteiraEmpty;
     private Instances novasAmostrasDeFronteiraSelcionadas;
     private Instances unlabeled;
+    private boolean jaRealizouSelecao = false;
+    private Selecao selecao = null;
     //private boolean isSupervisionado;
 
     private int indiceSelecaoPorLista = 0;
@@ -60,45 +64,52 @@ public class LearnActive extends Learn {
         int numInstancias = z2.attribute(z2.numAttributes() - 1).numValues() * xNumClasses;
         int iteration = 0;
 
-        Selecao selecao = null;
-
         AbstractClusterer clusterer = agrupamento(numInstancias, z2, tipoAgrupamento);
 
         //encontrar raizes
         Instances raizes = raizesProximasAoCentroide(z2, clusterer);
 
         z2 = atualizaZ2(z2, raizes);//remove as amostras raizes de z2
-        
-        
-        //encontrar amostras de fronteira
-        if (paramFronteiras == null) {
-            //System.out.println("nao carregou externamente");
-            selecionaAmostrasDeFronteira(clusterer, z2, kVizinhos);
+
+        Instances amostrasSelecionadasUnlabeled = null;
+
+        if (!metodoSelecao.equals("RDS") && !metodoSelecao.equals("Clu")) {
+            //encontrar amostras de fronteira
+            if (paramFronteiras == null) {
+                //System.out.println("nao carregou externamente");
+                selecionaAmostrasDeFronteira(clusterer, z2, kVizinhos);
+            } else {
+                //System.out.println("!!!!!!!!!!! carregou externamente!!!!!!!!!!!!!!!!!!!!");
+                this.fronteiras = paramFronteiras;
+                this.amostrasT = paramAmostrasT;
+                this.vizinhosT = paramVizinhosT;
+                salvarFronteirasEmArquivo(fronteiras, z2);
+                new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                        "tempoSelecaoFronteira", String.valueOf(0.0));
+            }
         } else {
-            //System.out.println("!!!!!!!!!!! carregou externamente!!!!!!!!!!!!!!!!!!!!");
-            this.fronteiras = paramFronteiras;
-            this.amostrasT = paramAmostrasT;
-            this.vizinhosT = paramVizinhosT;
-            salvarFronteirasEmArquivo(fronteiras, z2);
             new IOText().save(System.getProperty("user.dir").concat(File.separator),
-                "tempoSelecaoFronteira", String.valueOf(0.0));
+                    "tempoSelecaoFronteira", String.valueOf(0.0));
         }
-        
-        //ordena amostras de fronteira
-        ordenacao(ordenacao, z2);
-        
-        z2 = atualizaZ2(z2, beanAmostra2Instances(z2, fronteiras));//remove as amostras de fronteira de z2
 
-        new IOArff().saveArffFile(beanAmostra2Instances(z2, fronteiras), "fronteira");
-        new IOArff().saveArffFile(beanAmostra2Instances(z2, amostrasT), "amostrasT");
-        new IOArff().saveArffFile(beanAmostra2Instances(removeAtributoClasse(z2), vizinhosT), "vizinhosT");
+        if (!metodoSelecao.equals("RDS") && !metodoSelecao.equals("Clu")) {
 
-        unlabeled = z2;
-        unlabeled.setClassIndex(unlabeled.numAttributes() - 1);
-        
-        Instances amostrasSelecionadasUnlabeled = new Instances(unlabeled);
-        amostrasSelecionadasUnlabeled.delete();
-        
+            //ordena amostras de fronteira
+            ordenacao(ordenacao, z2);
+
+            z2 = atualizaZ2(z2, beanAmostra2Instances(z2, fronteiras));//remove as amostras de fronteira de z2
+
+            new IOArff().saveArffFile(beanAmostra2Instances(z2, fronteiras), "fronteira");
+            new IOArff().saveArffFile(beanAmostra2Instances(z2, amostrasT), "amostrasT");
+            new IOArff().saveArffFile(beanAmostra2Instances(removeAtributoClasse(z2), vizinhosT), "vizinhosT");
+
+            unlabeled = z2;
+            unlabeled.setClassIndex(unlabeled.numAttributes() - 1);
+
+            amostrasSelecionadasUnlabeled = new Instances(unlabeled);
+            amostrasSelecionadasUnlabeled.delete();
+        }
+
         if (isSupervisionado) {
 //            try {
 //                raizes = selecionaAmostras(metodoSelecao, selecao, clusterer.numberOfClusters()/2, raizes);
@@ -106,20 +117,27 @@ public class LearnActive extends Learn {
 //                Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
 //            }
         } else {
-            try{
+            try {
                 //seleciona do conjunto unlabeled
-                amostrasSelecionadasUnlabeled = selecionaUnlabeled(numInstancias/2, amostrasSelecionadasUnlabeled);
+                amostrasSelecionadasUnlabeled = selecionaUnlabeled(numInstancias / 2, amostrasSelecionadasUnlabeled);
                 //seleciona do conjunto labeled
                 //amostrasSelecionadasUnlabeled = selecionaAmostras(metodoSelecao, selecao, numInstancias/2, amostrasSelecionadasUnlabeled);
             } catch (Exception ex) {
                 Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+
+        if (!metodoSelecao.equals("RDS") && !metodoSelecao.equals("Clu")) {
+            new IOArff().saveArffFile(amostrasSelecionadasUnlabeled, "unlabeled");
+            System.out.println(raizes.numInstances() + "+" + amostrasSelecionadasUnlabeled.numInstances() + "=" + (raizes.numInstances() + amostrasSelecionadasUnlabeled.numInstances()));
+        } else {
+            Instances nulo = new Instances(raizes);
+            nulo.delete();
+            new IOArff().saveArffFile(nulo, "unlabeled");
+        }
+
         new IOArff().saveArffFile(raizes, "raizes" + iteration);
-        
-        new IOArff().saveArffFile(amostrasSelecionadasUnlabeled, "unlabeled");
-        System.out.println(raizes.numInstances() +"+"+ amostrasSelecionadasUnlabeled.numInstances() +"="+(raizes.numInstances() + amostrasSelecionadasUnlabeled.numInstances()));
-        
+
         classifica(classificador, raizes, z3, amostrasSelecionadasUnlabeled);
 
         classesConhecidas = new HashSet<>();
@@ -136,12 +154,13 @@ public class LearnActive extends Learn {
         salvaDados(classificador, iteration);
 
         iteration++;
-        
+
         //loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooop
         do {
 
             try {
-                raizes = selecionaAmostras(metodoSelecao, selecao, clusterer.numberOfClusters(), raizes);
+                raizes = selecionaAmostras(metodoSelecao, clusterer.numberOfClusters(), raizes,
+                        clusterer, z2);
             } catch (Exception ex) {
                 Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -153,23 +172,28 @@ public class LearnActive extends Learn {
 //                    Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
 //                }
             } else {
-                try{
+                try {
                     //seleciona do conjunto unlabeled
-                    amostrasSelecionadasUnlabeled = selecionaUnlabeled(numInstancias/2, amostrasSelecionadasUnlabeled);
+                    amostrasSelecionadasUnlabeled = selecionaUnlabeled(numInstancias / 2, amostrasSelecionadasUnlabeled);
                     //seleciona do conjunto labeled
                     //amostrasSelecionadasUnlabeled = selecionaAmostras(metodoSelecao, selecao, numInstancias/2, amostrasSelecionadasUnlabeled);
                 } catch (Exception ex) {
                     Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            
+
             System.err.print("Salvando raízes em txt ... ");
             new IOArff().saveArffFile(raizes, "raizes" + iteration);
             System.err.println("feito");
-            
-            new IOArff().saveArffFile(amostrasSelecionadasUnlabeled, "unlabeled");
-            System.out.println(raizes.numInstances() + "+" + amostrasSelecionadasUnlabeled.numInstances() + "=" + (raizes.numInstances() + amostrasSelecionadasUnlabeled.numInstances()));
 
+            if (!metodoSelecao.equals("RDS") && !metodoSelecao.equals("Clu")) {
+                new IOArff().saveArffFile(amostrasSelecionadasUnlabeled, "unlabeled");
+                System.out.println(raizes.numInstances() + "+" + amostrasSelecionadasUnlabeled.numInstances() + "=" + (raizes.numInstances() + amostrasSelecionadasUnlabeled.numInstances()));
+            } else {
+                Instances nulo = new Instances(raizes);
+                nulo.delete();
+                new IOArff().saveArffFile(nulo, "unlabeled");
+            }
             classifica(classificador, raizes, z3, amostrasSelecionadasUnlabeled);
 
             numClassesConhecidas = classesConhecidas(novasAmostrasDeFronteiraSelcionadas);
@@ -181,9 +205,8 @@ public class LearnActive extends Learn {
 
             //salva iteracao
             salvaDados(classificador, iteration);
-
             iteration++;
-            
+
         } while (!isFronteiraEmpty);
 
     }
@@ -223,7 +246,7 @@ public class LearnActive extends Learn {
                     Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 break;
-                
+
             case "FarthestFirst":
                 try {
                     options = weka.core.Utils.splitOptions("-N " + numClusteres + " -S 1");
@@ -403,7 +426,7 @@ public class LearnActive extends Learn {
                 Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
             }
             Instances vizinhos = null;
-            
+
             EuclideanDistance df = new EuclideanDistance(z2SemClasse);
             df.setDontNormalize(true);
             KDTree tree = new KDTree();
@@ -414,7 +437,7 @@ public class LearnActive extends Learn {
             } catch (Exception ex) {
                 Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
             }
-            
+
             for (int j = 0; j < vizinhos.numInstances(); j++) {
                 int clusterV = 0;
                 try {
@@ -605,25 +628,46 @@ public class LearnActive extends Learn {
         System.err.println("feito");
     }
 
-    private Instances selecionaAmostras(String metodoSelecao, Selecao selecao, int numAmostras, Instances raizes) {
+    private Instances selecionaAmostras(String metodoSelecao, int numAmostras, Instances raizes,
+            AbstractClusterer clusterer, Instances z2) {
         long init = System.nanoTime();
         switch (metodoSelecao) {
             case "lista":
-                if (selecao == null) {
+                if (selecao == null || !jaRealizouSelecao) {
                     selecao = new SelecaoListas(fronteiras);
+                    jaRealizouSelecao = true;
                 }
-                raizes = selecao.seleciona(numAmostras, raizes);
-                isFronteiraEmpty = selecao.isEmpty();
+                //raizes = selecao.seleciona(numAmostras, raizes);
+                //isFronteiraEmpty = selecao.isEmpty();
                 break;
             case "ordem":
-                if (selecao == null) {
+                if (selecao == null || !jaRealizouSelecao) {
                     selecao = new SelecaoOrdem(fronteiras);
+                    jaRealizouSelecao = true;
                 }
-                raizes = selecao.seleciona(numAmostras, raizes);
-                isFronteiraEmpty = selecao.isEmpty();
+                //raizes = selecao.seleciona(numAmostras, raizes);
+                //isFronteiraEmpty = selecao.isEmpty();
+                break;
+            case "RDS":
+                if (selecao == null || !jaRealizouSelecao) {
+                    selecao = new RDS(clusterer, z2);
+                    jaRealizouSelecao = true;
+                }
+                //raizes = selecao.seleciona(numAmostras, raizes);
+                //isFronteiraEmpty = selecao.isEmpty();
+                break;
+            case "Clu":
+                if (selecao == null || !jaRealizouSelecao) {
+                    selecao = new Clu(clusterer, z2);
+                    jaRealizouSelecao = true;
+                }
                 break;
         }
+        raizes = selecao.seleciona(numAmostras, raizes);
+        isFronteiraEmpty = selecao.isEmpty();
+
         novasAmostrasDeFronteiraSelcionadas = selecao.getAmostrasSelecionadas();
+
         long end = System.nanoTime();
         long diff = end - init;
         double time = (diff / 1000000000.0);//tempo de seleção
