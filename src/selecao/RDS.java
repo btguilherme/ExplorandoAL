@@ -17,7 +17,6 @@ import weka.clusterers.AbstractClusterer;
 import weka.core.EuclideanDistance;
 import weka.core.Instance;
 import weka.core.Instances;
-import weka.filters.Filter;
 
 /**
  *
@@ -42,12 +41,13 @@ public class RDS extends Selecao {
     private AbstractClusterer clusterer;
     private Instances z2, z2SemRotulo, z2ComRotulo, novasAmostrasDeFronteiraSelcionadas;
     private List<Instances> listas;
+    private boolean isSelected = false;
 
-    public RDS(AbstractClusterer clusterer, Instances z2) {
+    public RDS(AbstractClusterer clusterer, Instances z2i) {
         this.clusterer = clusterer;
-        this.z2ComRotulo = new Instances(z2);
-        this.z2 = new Instances(z2);
-        this.z2SemRotulo = RemoveAttClass.removeAtributoClasse(z2);
+        this.z2ComRotulo = new Instances(z2i);
+        this.z2 = new Instances(z2i);
+        this.z2SemRotulo = RemoveAttClass.removeAtributoClasse(z2i);
         this.listas = new ArrayList<>();
     }
 
@@ -59,16 +59,35 @@ public class RDS extends Selecao {
         
         Instances raizesSemRotulos = RemoveAttClass.removeAtributoClasse(raizes);
 
-        if (listas.isEmpty()) {
-            selecaoOrganizacao(raizesSemRotulos);
+        if (listas.isEmpty() && !isSelected) {
+            selecaoOrganizacao(z2SemRotulo);
+            isSelected = true;
         }
- 
-        raizesSemRotulos = selecaoRetorno(raizesSemRotulos, numAmostras);
         
-        Instances raizesRetorno = new Instances(raizes);
-        raizesRetorno.delete();
+        int contAmostras = 0;
+        for (int i = 0; i < listas.size(); i++) {
+            contAmostras = contAmostras + listas.get(i).numInstances();
+        }
         
-        for (int i = 0; i < raizesSemRotulos.numInstances(); i++) {
+        if (contAmostras < numAmostras){
+            numAmostras = contAmostras;
+        }
+        
+        //System.out.println(raizesSemRotulos.toString());
+        
+        //raizesSemRotulos = selecaoRetorno(raizesSemRotulos, numAmostras);
+        raizes = selecaoRetorno(raizes, numAmostras);
+        
+//System.out.println("");
+        //System.out.println(raizesSemRotulos.toString());
+        
+//        
+//        Instances raizesRetorno = new Instances(raizes);
+//        raizesRetorno.delete();
+//
+
+        Instances aux = RemoveAttClass.removeAtributoClasse(z2);
+        for (int i = 0; i < raizes.numInstances(); i++) {
 //            for (int j = 0; j < raizes.numInstances(); j++) {
 //                if (raizes.instance(j).toString().contains(raizesSemRotulos.instance(i).toString())) {
 //                    raizesRetorno.add(raizes.instance(j));
@@ -76,14 +95,21 @@ public class RDS extends Selecao {
 //                }
 //            }
             for (int j = 0; j < z2.numInstances(); j++) {
-                if(z2.instance(j).toString().contains(raizesSemRotulos.instance(i).toString())){
-                    raizesRetorno.add(z2.instance(j));
+                if(aux.instance(j).toString().equals(raizes.instance(i).toString())){
+                    raizes.set(i, z2.instance(j));
                     break;
                 }
             }
         }
         
-        return raizesRetorno;
+        
+        
+        //System.out.println("");
+        //System.out.println(raizesRetorno.toString());
+        
+        //System.out.println("_+_+_+__+_+_+_+_+_+_+_+_+_+_+__+_+_+_+_+_+_+_+_+_+_+_");
+        //return raizesRetorno;
+        return raizes;
     }
 
     private void selecaoOrganizacao(Instances raizes) {
@@ -142,8 +168,6 @@ public class RDS extends Selecao {
             temp.set(cont, key);
             cont--;
         }
-        
-        
 
         listas.add(temp);
     }
@@ -153,43 +177,38 @@ public class RDS extends Selecao {
         int contAmostras = 0;
         int contListas = 0;
         int indiceLista = 0;
-
         do {
             Instances temp = listas.get(indiceLista);
-
             if (temp.numInstances() > 0) {
                 contListas = 0;
-            
                 novasAmostrasDeFronteiraSelcionadas.add(temp.instance(0));
                 raizes.add(temp.instance(0));
                 temp.delete(0);
                 listas.set(indiceLista, temp);
-                
                 contAmostras++;
+                
                 if (contAmostras == numAmostras) {
                     break;
                 }
             } else {
                 contListas++;
             }
-
-            if (contListas == listas.size() - 1) {
+            if (contListas == listas.size()) {
                 break;
             }
-
             if (indiceLista == listas.size() - 1) {
                 indiceLista = 0;
             } else {
                 indiceLista++;
             }
-
-        } while (contAmostras != numAmostras || contListas != listas.size());
+            
+        } while (contAmostras < numAmostras || contListas != listas.size());
 
         for (int i = 0; i < novasAmostrasDeFronteiraSelcionadas.numInstances(); i++) {
             for (int j = 0; j < z2.numInstances(); j++) {
-                
                 if(z2.instance(j).toString().contains(novasAmostrasDeFronteiraSelcionadas.instance(i).toString())){
                     novasAmostrasDeFronteiraSelcionadas.set(i, z2.instance(j));
+                    break;
                 }
             }
         }

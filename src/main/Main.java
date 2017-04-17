@@ -44,7 +44,7 @@ public class Main {
         Movimentacao mov = new Movimentacao();
         IOArff io = new IOArff();
 
-        Instances z2 = null, z3 = null;
+        Instances z2 = null, z2i = null, z2ii = null, z3 = null;
         List<BeanAmostra> fronteiras = null, amostrasT = null, vizinhosT = null;
 
 //        if (INPUT_MANUAL == true) {
@@ -70,7 +70,7 @@ public class Main {
         String[] agrupamentos = AGRUPAMENTO.split(" ");
 
         String folderName = null;
-        String[][] pathsTreinoTeste = new String[MAX_EXECS][5];
+        String[][] pathsTreinoTeste = new String[MAX_EXECS][7];
 
         for (int i = 0; i < aprendizado.length; i++) {
             for (int l = 0; l < classificadores.length; l++) {
@@ -91,13 +91,27 @@ public class Main {
                                 if (INPUT_MANUAL == false) {
                                     //split  
                                     split(props.getProperty("prop.inputNormal"),
-                                            props.getProperty("prop.split.treino"), "splited");
+                                            props.getProperty("prop.split.treino"), "splited", "treino", "teste");
                                     //carrega z2    
                                     z2 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
                                             concat("splited").concat(File.separator).concat("treino.arff"));
                                     //carrega z3
                                     z3 = io.openSplit(System.getProperty("user.dir").concat(File.separator).
                                             concat("splited").concat(File.separator).concat("teste.arff"));
+                                    
+                                    
+                                    split(System.getProperty("user.dir").
+                                            concat(File.separator).concat("splited").concat(File.separator).
+                                            concat("treino.arff"),"50", "splited", "z2i", "z2ii");
+                                    
+                                    z2i = io.openSplit(System.getProperty("user.dir").concat(File.separator).
+                                                concat("splited").concat(File.separator).concat("z2i.arff"));
+                                    
+        
+                                    z2ii = io.openSplit(System.getProperty("user.dir").concat(File.separator).
+                                                concat("splited").concat(File.separator).concat("z2ii.arff")); 
+                                    
+                                    
                                 } else {
                                 //carregar treino e teste das iterações do primeiro classificador
                                     //INPUT_MANUAL = true;
@@ -110,7 +124,9 @@ public class Main {
                                                         props.getProperty("prop.inputManual.path").concat(execucao+"/teste.arff"),//teste
                                                         props.getProperty("prop.inputManual.path").concat(execucao+"/fronteira.arff"),//fronteira
                                                         props.getProperty("prop.inputManual.path").concat(execucao+"/amostrasT.arff"),//amostrasT
-                                                        props.getProperty("prop.inputManual.path").concat(execucao+"/vizinhosT.arff")//vizinhosT
+                                                        props.getProperty("prop.inputManual.path").concat(execucao+"/vizinhosT.arff"),//vizinhosT
+                                                        props.getProperty("prop.inputManual.path").concat(execucao+"/z2i.arff"),//vizinhosT
+                                                        props.getProperty("prop.inputManual.path").concat(execucao+"/z2ii.arff")//vizinhosT
                                                 );
                                     } else {
 
@@ -119,7 +135,9 @@ public class Main {
                                                         pathsTreinoTeste[execucao][1],//teste
                                                         pathsTreinoTeste[execucao][2],//fronteira
                                                         pathsTreinoTeste[execucao][3],//amostrasT
-                                                        pathsTreinoTeste[execucao][4]//vizinhosT
+                                                        pathsTreinoTeste[execucao][4],//vizinhosT
+                                                        pathsTreinoTeste[execucao][5],//z2i
+                                                        pathsTreinoTeste[execucao][6]//z2ii
                                                 );
                                     }
 
@@ -128,12 +146,16 @@ public class Main {
                                     fronteiras = (List<BeanAmostra>) temp.get(2);
                                     amostrasT = (List<BeanAmostra>) temp.get(3);
                                     vizinhosT = (List<BeanAmostra>) temp.get(4);
+                                    z2i = (Instances) temp.get(5);
+                                    z2ii = (Instances) temp.get(6);
 
                                 }
 
+                                z2i.setClassIndex(z2i.numAttributes() - 1);
                                 z2.setClassIndex(z2.numAttributes() - 1);
                                 z3.setClassIndex(z3.numAttributes() - 1);
-
+                                
+                
                                 folderName = props.getProperty("prop.inputNormal").split("/")[props.getProperty("prop.inputNormal").split("/").length - 1].split(".arff")[0]
                                         + "_-_" + aprendizado[i] + "_-_"+ agrupamentos[m]+"_-_" + ordenacao[j] + "_-_" + selecao[k] + "_-_" + classificadores[l] + "_-_exec_" + execucao;
 
@@ -156,6 +178,14 @@ public class Main {
                                 pathsTreinoTeste[execucao][4]
                                         = System.getProperty("user.dir").concat(File.separator).
                                         concat(folderName).concat(File.separator).concat("vizinhosT.arff");
+                                
+                                pathsTreinoTeste[execucao][5]
+                                        = System.getProperty("user.dir").concat(File.separator).
+                                        concat(folderName).concat(File.separator).concat("z2i.arff");
+                                
+                                pathsTreinoTeste[execucao][6]
+                                        = System.getProperty("user.dir").concat(File.separator).
+                                        concat(folderName).concat(File.separator).concat("z2ii.arff");
 
                                 //aprendizado
                                 switch (aprendizado[i]) {
@@ -165,7 +195,7 @@ public class Main {
                                         break;
                                     case "act":
                                         int kVizinhos = z2.numClasses()/2;// * XNUMCLASSES;
-                                        new LearnActive().active(z2, z3, XNUMCLASSES, kVizinhos,
+                                        new LearnActive().active(z2, z2i, z2ii, z3, XNUMCLASSES, kVizinhos,
                                                 ordenacao[j], classificadores[l], selecao[k], fronteiras,
                                                 amostrasT, vizinhosT, agrupamentos[m]);
                                         break;
@@ -185,20 +215,26 @@ public class Main {
         }
     }
 
-    private static void split(String path, String pctTreinamento, String folder) {
+    private static void split(String path, String pctTreinamento, String folder,
+            String name1, String name2) {
+        
+        
+        
         List<String> files = new ArrayList<>();
         Splitter splitter = new Splitter();
-        splitter.main(new String[]{path, pctTreinamento});
-        files.add("teste.arff");
-        files.add("treino.arff");
+        splitter.main(new String[]{path, pctTreinamento, name1, name2});
+        files.add(name1 + ".arff");
+        files.add(name2 + ".arff");
         Movimentacao.mvSplit(files, folder);
     }
 
     private static List<Object> inputManual(String treino, String teste,
-            String fronteira, String amostraT, String vizinhoT) {
+            String fronteira, String amostraT, String vizinhoT, String z2i, 
+            String z2ii) {
 
         IOArff io = new IOArff();
-        Instances z2 = null, z3 = null, fronteiraTemp = null, amostraTTemp = null, vizinhoTTemp = null;
+        Instances z2 = null, z3 = null, fronteiraTemp = null, amostraTTemp = null, 
+                vizinhoTTemp = null, z2iTemp = null, z2iiTemp = null;
 
         List<BeanAmostra> fronteiras = new ArrayList<>();
         List<BeanAmostra> amostrasT = new ArrayList<>();
@@ -210,6 +246,8 @@ public class Main {
             fronteiraTemp = io.openSplit(fronteira);
             amostraTTemp = io.openSplit(amostraT);
             vizinhoTTemp = io.openSplit(vizinhoT);
+            z2iTemp = io.openSplit(z2i);
+            z2iiTemp = io.openSplit(z2ii);
         } catch (Exception ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -233,6 +271,8 @@ public class Main {
         List<String> files = new ArrayList<>();
         files.add(treino);
         files.add(teste);
+        files.add(z2i);
+        files.add(z2ii);
 
         List<Object> ret = new ArrayList<>();
         ret.add(z2);
@@ -240,6 +280,8 @@ public class Main {
         ret.add(fronteiras);
         ret.add(amostrasT);
         ret.add(vizinhosT);
+        ret.add(z2iTemp);
+        ret.add(z2iiTemp);
 
         Movimentacao.mvSplit(files, "splited");
 

@@ -49,27 +49,25 @@ public class LearnActive extends Learn {
     private Instances unlabeled;
     private boolean jaRealizouSelecao = false;
     private Selecao selecao = null;
-    //private boolean isSupervisionado;
+//    private int indiceSelecaoPorLista = 0;
 
-    private int indiceSelecaoPorLista = 0;
-
-    public void active(Instances z2, Instances z3, int xNumClasses,
+    public void active(Instances z2, Instances z2i, Instances z2ii, Instances z3, int xNumClasses,
             int kVizinhos, String ordenacao, String classificador,
             String metodoSelecao, List<BeanAmostra> paramFronteiras,
             List<BeanAmostra> paramAmostrasT, List<BeanAmostra> paramVizinhosT,
             String tipoAgrupamento) {
 
         isSupervisionado = tipoClassificador(classificador);
-
-        int numInstancias = z2.attribute(z2.numAttributes() - 1).numValues() * xNumClasses;
+        
+        int numInstancias = z2i.attribute(z2i.numAttributes() - 1).numValues() * xNumClasses;
         int iteration = 0;
 
-        AbstractClusterer clusterer = agrupamento(numInstancias, z2, tipoAgrupamento);
+        AbstractClusterer clusterer = agrupamento(numInstancias, z2i, tipoAgrupamento);
 
         //encontrar raizes
-        Instances raizes = raizesProximasAoCentroide(z2, clusterer);
+        Instances raizes = raizesProximasAoCentroide(z2i, clusterer);
 
-        z2 = atualizaZ2(z2, raizes);//remove as amostras raizes de z2
+        z2i = atualizaZ2(z2i, raizes);//remove as amostras raizes de z2
 
         Instances amostrasSelecionadasUnlabeled = null;
 
@@ -77,13 +75,13 @@ public class LearnActive extends Learn {
             //encontrar amostras de fronteira
             if (paramFronteiras == null) {
                 //System.out.println("nao carregou externamente");
-                selecionaAmostrasDeFronteira(clusterer, z2, kVizinhos);
+                selecionaAmostrasDeFronteira(clusterer, z2i, kVizinhos);
             } else {
                 //System.out.println("!!!!!!!!!!! carregou externamente!!!!!!!!!!!!!!!!!!!!");
                 this.fronteiras = paramFronteiras;
                 this.amostrasT = paramAmostrasT;
                 this.vizinhosT = paramVizinhosT;
-                salvarFronteirasEmArquivo(fronteiras, z2);
+                salvarFronteirasEmArquivo(fronteiras, z2i);
                 new IOText().save(System.getProperty("user.dir").concat(File.separator),
                         "tempoSelecaoFronteira", String.valueOf(0.0));
             }
@@ -95,20 +93,20 @@ public class LearnActive extends Learn {
         if (!metodoSelecao.equals("RDS") && !metodoSelecao.equals("Clu")) {
 
             //ordena amostras de fronteira
-            ordenacao(ordenacao, z2);
+            ordenacao(ordenacao, z2i);
 
-            z2 = atualizaZ2(z2, beanAmostra2Instances(z2, fronteiras));//remove as amostras de fronteira de z2
+            z2i = atualizaZ2(z2i, beanAmostra2Instances(z2i, fronteiras));//remove as amostras de fronteira de z2
 
-            new IOArff().saveArffFile(beanAmostra2Instances(z2, fronteiras), "fronteira");
-            new IOArff().saveArffFile(beanAmostra2Instances(z2, amostrasT), "amostrasT");
-            new IOArff().saveArffFile(beanAmostra2Instances(removeAtributoClasse(z2), vizinhosT), "vizinhosT");
-
-            unlabeled = z2;
-            unlabeled.setClassIndex(unlabeled.numAttributes() - 1);
-
-            amostrasSelecionadasUnlabeled = new Instances(unlabeled);
-            amostrasSelecionadasUnlabeled.delete();
+            new IOArff().saveArffFile(beanAmostra2Instances(z2i, fronteiras), "fronteira");
+            new IOArff().saveArffFile(beanAmostra2Instances(z2i, amostrasT), "amostrasT");
+            new IOArff().saveArffFile(beanAmostra2Instances(removeAtributoClasse(z2i), vizinhosT), "vizinhosT");
         }
+        
+        unlabeled = z2ii;
+        unlabeled.setClassIndex(unlabeled.numAttributes() - 1);
+        
+        amostrasSelecionadasUnlabeled = new Instances(unlabeled);
+        amostrasSelecionadasUnlabeled.delete();
 
         if (isSupervisionado) {
 //            try {
@@ -127,14 +125,14 @@ public class LearnActive extends Learn {
             }
         }
 
-        if (!metodoSelecao.equals("RDS") && !metodoSelecao.equals("Clu")) {
+        //if (!metodoSelecao.equals("RDS") && !metodoSelecao.equals("Clu")) {
             new IOArff().saveArffFile(amostrasSelecionadasUnlabeled, "unlabeled");
             System.out.println(raizes.numInstances() + "+" + amostrasSelecionadasUnlabeled.numInstances() + "=" + (raizes.numInstances() + amostrasSelecionadasUnlabeled.numInstances()));
-        } else {
-            Instances nulo = new Instances(raizes);
-            nulo.delete();
-            new IOArff().saveArffFile(nulo, "unlabeled");
-        }
+        //} else {
+        //    Instances nulo = new Instances(raizes);
+        //    nulo.delete();
+        //    new IOArff().saveArffFile(nulo, "unlabeled");
+        //}
 
         new IOArff().saveArffFile(raizes, "raizes" + iteration);
 
@@ -160,7 +158,7 @@ public class LearnActive extends Learn {
 
             try {
                 raizes = selecionaAmostras(metodoSelecao, clusterer.numberOfClusters(), raizes,
-                        clusterer, z2);
+                        clusterer, z2i);
             } catch (Exception ex) {
                 Logger.getLogger(LearnActive.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -186,14 +184,14 @@ public class LearnActive extends Learn {
             new IOArff().saveArffFile(raizes, "raizes" + iteration);
             System.err.println("feito");
 
-            if (!metodoSelecao.equals("RDS") && !metodoSelecao.equals("Clu")) {
+            //if (!metodoSelecao.equals("RDS") && !metodoSelecao.equals("Clu")) {
                 new IOArff().saveArffFile(amostrasSelecionadasUnlabeled, "unlabeled");
                 System.out.println(raizes.numInstances() + "+" + amostrasSelecionadasUnlabeled.numInstances() + "=" + (raizes.numInstances() + amostrasSelecionadasUnlabeled.numInstances()));
-            } else {
-                Instances nulo = new Instances(raizes);
-                nulo.delete();
-                new IOArff().saveArffFile(nulo, "unlabeled");
-            }
+            //} else {
+            //    Instances nulo = new Instances(raizes);
+              //  nulo.delete();
+               // new IOArff().saveArffFile(nulo, "unlabeled");
+           // }
             classifica(classificador, raizes, z3, amostrasSelecionadasUnlabeled);
 
             numClassesConhecidas = classesConhecidas(novasAmostrasDeFronteiraSelcionadas);
@@ -629,7 +627,8 @@ public class LearnActive extends Learn {
     }
 
     private Instances selecionaAmostras(String metodoSelecao, int numAmostras, Instances raizes,
-            AbstractClusterer clusterer, Instances z2) {
+            AbstractClusterer clusterer, Instances z2i) {
+        
         long init = System.nanoTime();
         switch (metodoSelecao) {
             case "lista":
@@ -650,7 +649,7 @@ public class LearnActive extends Learn {
                 break;
             case "RDS":
                 if (selecao == null || !jaRealizouSelecao) {
-                    selecao = new RDS(clusterer, z2);
+                    selecao = new RDS(clusterer, z2i);
                     jaRealizouSelecao = true;
                 }
                 //raizes = selecao.seleciona(numAmostras, raizes);
@@ -658,7 +657,7 @@ public class LearnActive extends Learn {
                 break;
             case "Clu":
                 if (selecao == null || !jaRealizouSelecao) {
-                    selecao = new Clu(clusterer, z2);
+                    selecao = new Clu(clusterer, z2i);
                     jaRealizouSelecao = true;
                 }
                 break;
@@ -804,5 +803,7 @@ public class LearnActive extends Learn {
 
         return amostrasUnlabeled;
     }
+
+    
 
 }

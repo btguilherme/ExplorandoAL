@@ -61,6 +61,14 @@ public class Movimentacao {
                 System.getProperty("user.dir") + "/" + folderDst);
         
         exec("cp",
+                System.getProperty("user.dir") + "/splited/z2i.arff",
+                System.getProperty("user.dir") + "/" + folderDst);
+        
+        exec("cp",
+                System.getProperty("user.dir") + "/splited/z2ii.arff",
+                System.getProperty("user.dir") + "/" + folderDst);
+        
+        exec("cp",
                 System.getProperty("user.dir") + "/fronteira.arff",
                 System.getProperty("user.dir") + "/" + folderDst);
         

@@ -23,14 +23,19 @@ public class Splitter {
     public static List<String> cabecalho;
     private static List<String> conjTreinamento;
     private static List<String> conjTeste;
+    private static String name1;
+    private static String name2;
     
     
     public static void main(String[] args) {
-        if(args.length < 2){
+        if(args.length < 4){
             usage();
             System.exit(0);
         }
         IOArff io = new IOArff();
+        
+        name1 = args[2];
+        name2 = args[3];
         
         split(io.open(args[0]), Double.parseDouble(args[1]));
     }
@@ -41,6 +46,8 @@ public class Splitter {
         System.out.println("usage java -jar Splitter.jar <P1> <P2>");
         System.out.println("P1: input dataset in the ARFF file format");
         System.out.println("P2: percentage for the training set size [0,100]");
+        System.out.println("P3: name file 1 (training set)");
+        System.out.println("P4: name file 2 (testing set)");
         System.out.println("");
     }
     
@@ -58,8 +65,8 @@ public class Splitter {
         _split(classesSeparadas, porcentagemTreino);
         
         IOArff io = new IOArff();
-        io.save(System.getProperty("user.dir").concat(File.separator), "treino", conjTreinamento);
-        io.save(System.getProperty("user.dir").concat(File.separator), "teste", conjTeste);
+        io.save(System.getProperty("user.dir").concat(File.separator), name1, conjTreinamento);
+        io.save(System.getProperty("user.dir").concat(File.separator), name2, conjTeste);
         
         classesSeparadas.clear();
     }
@@ -77,7 +84,7 @@ public class Splitter {
             List<String> classe = classesSeparadas.get(i);
             
             int quantidadeAmostras = (int) Math.round(classe.size() * (porcentagemTreino / 100));
-       
+            
             Collections.shuffle(classe);     
             
             for (int j = 0; j < quantidadeAmostras; j++) {
@@ -105,7 +112,9 @@ public class Splitter {
                 String[] aux = arquivoOriginal.get(i).split(" ");
  
                 //recupera os nomes das classes
-                if (aux[1].equals("class") || aux[1].equals("CLASS")) {
+                if (aux[1].equals("class") || aux[1].equals("CLASS")
+                        || aux[1].equals("classe") || aux[1].equals("CLASSE")
+                        || aux[1].equals("classes") || aux[1].equals("CLASSES")) {
                     //é classe
                     String[] aux2 = arquivoOriginal.get(i).split(" ");
                     String[] aux3 = aux2[2].split(",");

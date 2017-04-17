@@ -12,9 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import learning.BeanAmostra;
 import learning.Learn;
-import learning.LearnActive;
 import weka.classifiers.Classifier;
-import weka.clusterers.SimpleKMeans;
 import weka.core.Instance;
 import weka.core.Instances;
 
@@ -50,7 +48,7 @@ public class SelecaoListas extends Selecao {
 
         if (isFirstTime) {
             listas = new HashMap<>();
-            Enumeration<Object> classes = raizes.attribute("class").enumerateValues();
+            Enumeration<Object> classes = raizes.attribute(raizes.numAttributes()-1).enumerateValues();
 
             //cria a estrutura da lista
             while (classes.hasMoreElements()) {

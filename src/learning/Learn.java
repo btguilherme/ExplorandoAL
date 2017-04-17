@@ -466,6 +466,9 @@ public class Learn {
 
         Movimentacao.exec("cp", preSrc + "raizes" + iteration + ".arff", dst);
         Movimentacao.exec("cp", preSrc + "splited".concat(File.separator).concat("teste.arff"), dst);
+        Movimentacao.exec("cp", preSrc + "splited".concat(File.separator).concat("z2i.arff"), dst);
+        Movimentacao.exec("cp", preSrc + "splited".concat(File.separator).concat("z2ii.arff"), dst);
+        
     }
 
     protected void moveFilesUniverSVM(int iteration) {
