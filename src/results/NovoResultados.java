@@ -102,6 +102,7 @@ public class NovoResultados {
         List<Double> sumTSelecs = new ArrayList<>();
         List<Double> sumKnowns = new ArrayList<>();
         List<Double> sumWrongClassifs = new ArrayList<>();
+        List<Double> sumPctErroUnlab = new ArrayList<>();
 
         List<List<Double>> todosValoresAcc = new ArrayList<>();
         List<List<Double>> todosValoresTTest = new ArrayList<>();
@@ -109,6 +110,7 @@ public class NovoResultados {
         List<List<Double>> todosValoresTSelec = new ArrayList<>();
         List<List<Double>> todosValoresKnown = new ArrayList<>();
         List<List<Double>> todosValoresWrongClassif = new ArrayList<>();
+        List<List<Double>> todosValoresPctErroUnlab = new ArrayList<>();
 
         for (int i = 0; i < contaExecucoes; i++) {
 
@@ -121,6 +123,7 @@ public class NovoResultados {
             List<Double> tSelecsIt = new ArrayList<>();
             List<Double> knownIt = new ArrayList<>();
             List<Double> wrongClassifIt = new ArrayList<>();
+            List<Double> pctErroUnlabIt = new ArrayList<>();
 
             for (int j = 0; j < contaIteracoes; j++) {
 
@@ -128,7 +131,7 @@ public class NovoResultados {
 
                 IOText io = new IOText();
 
-                double acc, tSelec, tTest, tTrain, knownClasses, wrongClassif;
+                double acc, tSelec, tTest, tTrain, knownClasses, wrongClassif, pctErroUnlab;
 
                 acc = Double.valueOf(io.open(pathIt + "acc.txt").get(0));
                 tSelec = Double.valueOf(io.open(pathIt + "tempoSelecao.txt").get(0));
@@ -136,6 +139,7 @@ public class NovoResultados {
                 tTrain = Double.valueOf(io.open(pathIt + "tempoTreino.txt").get(0));
                 knownClasses = Double.valueOf(io.open(pathIt + "classesConhecidas.txt").get(0));
                 wrongClassif = Double.valueOf(io.open(pathIt + "classificadasErradas.txt").get(0).split("/")[0]);
+                pctErroUnlab = Double.valueOf(io.open(pathIt + "pctErroPropUnlab.txt").get(0));
 
                 accsIt.add(acc);
                 tTestsIt.add(tTest);
@@ -143,6 +147,7 @@ public class NovoResultados {
                 tSelecsIt.add(tSelec);
                 knownIt.add(knownClasses);
                 wrongClassifIt.add(wrongClassif);
+                pctErroUnlabIt.add(pctErroUnlab);
 
                 if (i == 0) {
                     sumAccs.add(acc);
@@ -151,6 +156,7 @@ public class NovoResultados {
                     sumTSelecs.add(tSelec);
                     sumKnowns.add(knownClasses);
                     sumWrongClassifs.add(wrongClassif);
+                    sumPctErroUnlab.add(pctErroUnlab);
                 } else {
                     sumAccs.set(j, (sumAccs.get(j) + acc));
                     sumTTests.set(j, (sumTTests.get(j) + tTest));
@@ -158,6 +164,7 @@ public class NovoResultados {
                     sumTSelecs.set(j, (sumTSelecs.get(j) + tSelec));
                     sumKnowns.set(j, (sumKnowns.get(j) + knownClasses));
                     sumWrongClassifs.set(j, (sumWrongClassifs.get(j) + wrongClassif));
+                    sumPctErroUnlab.set(j, (sumPctErroUnlab.get(j) + pctErroUnlab));
                 }
 
             }
@@ -168,6 +175,7 @@ public class NovoResultados {
             todosValoresTSelec.add(tSelecsIt);
             todosValoresKnown.add(knownIt);
             todosValoresWrongClassif.add(wrongClassifIt);
+            todosValoresPctErroUnlab.add(pctErroUnlabIt);
 
         }
 
@@ -177,52 +185,61 @@ public class NovoResultados {
         List<Double> dpt_selec = desvioPadrao(contaIteracoes, contaExecucoes, todosValoresTSelec, sumTSelecs);
         List<Double> dpt_Known = desvioPadrao(contaIteracoes, contaExecucoes, todosValoresKnown, sumKnowns);
         List<Double> dpt_WrongClassif = desvioPadrao(contaIteracoes, contaExecucoes, todosValoresWrongClassif, sumWrongClassifs);
+        List<Double> dpt_PctErroUnlab = desvioPadrao(contaIteracoes, contaExecucoes, todosValoresPctErroUnlab, sumPctErroUnlab);
 
         //imprime certo para fazer contas/graficos (medias e desvios separados)
-        System.out.println("AVERAGES");
-        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)");
-        
-        List<String> conteudoAccs = new ArrayList<>();
-        List<String> conteudoTempTest = new ArrayList<>();
-        List<String> conteudoTempTreino = new ArrayList<>();
-        List<String> conteudoTempSelec = new ArrayList<>();
-        
-        for (int i = 0; i < sumAccs.size(); i++) {
-            System.out.printf("%d\t%.2f\t%.6f\t%.6f\t%.6f\t%.2f\t%.2f\n", (i + 1), (sumAccs.get(i) / (contaExecucoes)), (sumTTests.get(i) / (contaExecucoes)), (sumTTrains.get(i) / (contaExecucoes)), (sumTSelecs.get(i) / (contaExecucoes)), (sumKnowns.get(i) / (contaExecucoes)), (sumWrongClassifs.get(i) / (contaExecucoes)));
-            
-            if(gerarDat){
-                conteudoAccs.add(i+1+"\t"+(sumAccs.get(i) / (contaExecucoes))+"\t"+dpAcc.get(i));
-                conteudoTempTest.add(i+1+"\t"+(sumTTests.get(i) / (contaExecucoes))+"\t"+dpt_test.get(i));
-                conteudoTempTreino.add(i+1+"\t"+(sumTTrains.get(i) / (contaExecucoes))+"\t"+dpt_train.get(i));
-                conteudoTempSelec.add(i+1+"\t"+(sumTSelecs.get(i) / (contaExecucoes))+"\t"+dpt_selec.get(i));
-            }
-        }
-        if(gerarDat){
-            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_acc", conteudoAccs);
-            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_teste", conteudoTempTest);
-            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_treino", conteudoTempTreino);
-            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_selec", conteudoTempSelec);
-        }
-        
-        System.out.println("");
-        System.out.println("STD DEVS");
-        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)");
-        for (int i = 0; i < dpAcc.size(); i++) {
-            System.out.printf("%d\t%.2f\t%.6f\t%.6f\t%.6f\t%.2f\t%.2f\n", (i + 1), dpAcc.get(i), dpt_test.get(i), dpt_train.get(i), dpt_selec.get(i), dpt_Known.get(i), dpt_WrongClassif.get(i));
-        }
-        //imprime de um jeito bom para ler (media +/- desvio na mesma coluna)
-//        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)");
+//        System.out.println("AVERAGES");
+//        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)\tpctErroUnlab");
+//        
+//        List<String> conteudoAccs = new ArrayList<>();
+//        List<String> conteudoTempTest = new ArrayList<>();
+//        List<String> conteudoTempTreino = new ArrayList<>();
+//        List<String> conteudoTempSelec = new ArrayList<>();
+//        List<String> conteudoPctErroUnlab = new ArrayList<>();
+//        
 //        for (int i = 0; i < sumAccs.size(); i++) {
-//            System.out.printf("%d\t%.2f ± %.2f\t%.6f ± %.6f\t%.6f ± %.6f\t%.6f ± %.6f\t%.2f ± %.2f\t%.2f ± %.2f\n",
-//                    (i + 1),
-//                    (sumAccs.get(i) / (contaExecucoes)), dpAcc.get(i),
-//                    (sumTTests.get(i) / (contaExecucoes)), dpt_test.get(i),
-//                    (sumTTrains.get(i) / (contaExecucoes)), dpt_train.get(i),
-//                    (sumTSelecs.get(i) / (contaExecucoes)), dpt_selec.get(i),
-//                    (sumKnowns.get(i) / (contaExecucoes)), dpt_Known.get(i),
-//                    (sumWrongClassifs.get(i) / (contaExecucoes)), dpt_WrongClassif.get(i)
-//            );
+//            System.out.printf("%d\t%.2f\t%.6f\t%.6f\t%.6f\t%.2f\t%.2f\t%.2f\n", (i + 1), (sumAccs.get(i) / (contaExecucoes)), (sumTTests.get(i) / (contaExecucoes)), (sumTTrains.get(i) / (contaExecucoes)), (sumTSelecs.get(i) / (contaExecucoes)), (sumKnowns.get(i) / (contaExecucoes)), (sumWrongClassifs.get(i) / (contaExecucoes)), (sumPctErroUnlab.get(i) / (contaExecucoes)));
+//            
+//            if(gerarDat){
+//                conteudoAccs.add(i+1+"\t"+(sumAccs.get(i) / (contaExecucoes))+"\t"+dpAcc.get(i));
+//                conteudoTempTest.add(i+1+"\t"+(sumTTests.get(i) / (contaExecucoes))+"\t"+dpt_test.get(i));
+//                conteudoTempTreino.add(i+1+"\t"+(sumTTrains.get(i) / (contaExecucoes))+"\t"+dpt_train.get(i));
+//                conteudoTempSelec.add(i+1+"\t"+(sumTSelecs.get(i) / (contaExecucoes))+"\t"+dpt_selec.get(i));
+//                conteudoPctErroUnlab.add(i+1+"\t"+(sumPctErroUnlab.get(i) / (contaExecucoes))+"\t"+dpt_PctErroUnlab.get(i));
+//            }
 //        }
+//        if(gerarDat){
+//            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_acc", conteudoAccs);
+//            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_teste", conteudoTempTest);
+//            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_treino", conteudoTempTreino);
+//            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_selec", conteudoTempSelec);
+//            new IODat().save(System.getProperty("user.dir").concat(File.separator), datHeader+"_pctErroUnlab", conteudoPctErroUnlab);
+//        }
+//        
+//        System.out.println("");
+//        System.out.println("STD DEVS");
+//        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)\terroProp(%)");
+//        for (int i = 0; i < dpAcc.size(); i++) {
+//            System.out.printf("%d\t%.2f\t%.6f\t%.6f\t%.6f\t%.2f\t%.2f\t%.2f\n", (i + 1), dpAcc.get(i), dpt_test.get(i), dpt_train.get(i), dpt_selec.get(i), dpt_Known.get(i), dpt_WrongClassif.get(i), dpt_PctErroUnlab.get(i));
+//        }
+//        
+        
+        
+        
+        //imprime de um jeito bom para ler (media +/- desvio na mesma coluna)
+        System.out.println("it(#)\tacc(%)\tt_test(s)\tt_train(s)\tt_selec(s)\tknown(#)\twrong(#)\terroProp(%)");
+        for (int i = 0; i < sumAccs.size(); i++) {
+            System.out.printf("%d\t%.2f ± %.2f\t%.6f ± %.6f\t%.6f ± %.6f\t%.6f ± %.6f\t%.2f ± %.2f\t%.2f ± %.2f\t%.2f ± %.2f\n",
+                    (i + 1),
+                    (sumAccs.get(i) / (contaExecucoes)), dpAcc.get(i),
+                    (sumTTests.get(i) / (contaExecucoes)), dpt_test.get(i),
+                    (sumTTrains.get(i) / (contaExecucoes)), dpt_train.get(i),
+                    (sumTSelecs.get(i) / (contaExecucoes)), dpt_selec.get(i),
+                    (sumKnowns.get(i) / (contaExecucoes)), dpt_Known.get(i),
+                    (sumWrongClassifs.get(i) / (contaExecucoes)), dpt_WrongClassif.get(i),
+                    (sumPctErroUnlab.get(i) / (contaExecucoes)), dpt_PctErroUnlab.get(i)
+            );
+        }
         
         
         

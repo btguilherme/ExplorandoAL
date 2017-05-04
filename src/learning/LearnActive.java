@@ -152,10 +152,14 @@ public class LearnActive extends Learn {
         salvaDados(classificador, iteration);
 
         iteration++;
-
+        
+        int qtdAmostrasUnlab;
+        
         //loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooop
         do {
 
+            qtdAmostrasUnlab = amostrasSelecionadasUnlabeled.numInstances();
+            
             try {
                 raizes = selecionaAmostras(metodoSelecao, clusterer.numberOfClusters(), raizes,
                         clusterer, z2i);
@@ -205,7 +209,7 @@ public class LearnActive extends Learn {
             salvaDados(classificador, iteration);
             iteration++;
 
-        } while (!isFronteiraEmpty);
+        } while (!isFronteiraEmpty && amostrasSelecionadasUnlabeled.numInstances() != qtdAmostrasUnlab);
 
     }
 

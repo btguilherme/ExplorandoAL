@@ -34,6 +34,9 @@ public class Movimentacao {
             case "YATSI":
                 movimenta(folderDst, "YATSI_results");
                 break;
+            case "RF":
+                movimenta(folderDst, "RF_results");
+                break;
         }
     }
 

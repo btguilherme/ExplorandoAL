@@ -10,6 +10,7 @@ import classificar.ClassificadorFilteredCollectiveClassifier;
 import classificar.ClassificadorLLGC;
 import classificar.ClassificadorOPF;
 import classificar.ClassificadorOPFSemi;
+import classificar.ClassificadorRandomForest;
 import classificar.ClassificadorSVM;
 import classificar.ClassificadorSVMGridSearch;
 import classificar.ClassificadorUniverSVM;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -83,6 +85,9 @@ public class Learn {
     protected ClassificadorWeighting classificadorWeighting;
     protected ClassificadorYATSI classificadorYATSI;
     protected ClassificadorFilteredCollectiveClassifier classificadorFilteredCollectiveClassifier;
+    protected ClassificadorRandomForest classificadorRandomForest;
+
+    protected Set<Instance> jaVerificadas;
 
     protected Set<String> classesConhecidas;
 
@@ -90,7 +95,10 @@ public class Learn {
 
     protected void classifica(String classificador, Instances raizes, Instances z3, Instances unlabeled) {
 
-        int classificadasWrong;
+        if (jaVerificadas == null) {
+            jaVerificadas = new HashSet<>();
+        }
+
         switch (classificador) {
             case "svmcross":
                 classificadorSVM = new ClassificadorSVM();
@@ -120,50 +128,22 @@ public class Learn {
                 classificadorFilteredCollectiveClassifier = new ClassificadorFilteredCollectiveClassifier();
                 classifier = classificadorFilteredCollectiveClassifier.makeTheSteps(raizes, z3, unlabeled);
                 break;
+            case "RF":
+                classificadorRandomForest = new ClassificadorRandomForest();
+                classifier = classificadorRandomForest.makeTheSteps(raizes, z3);
+                break;
         }
-        classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
+        int classificadasWrong = verificaRaizesClassificadasErradas(raizes, classifier);
         new IOText().save(System.getProperty("user.dir").concat(File.separator),
                 "classificadasErradas", String.valueOf(classificadasWrong + "/" + raizes.numInstances()));
-        
-        
-        if(!isSupervisionado){
-            //errosPropagados()
-            List<Double> classeReal = new ArrayList<>();
-            List<Double> classePred = new ArrayList<>();
-            
-            for (int i = 0; i < unlabeled.numInstances(); i++) {
-                classeReal.add(unlabeled.instance(i).value(unlabeled.numAttributes() - 1));
-                try {
-                    classePred.add(classifier.classifyInstance(unlabeled.instance(i)));
-                    
-                } catch (Exception ex) {
-                    Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
-                }                
-            }
-            
-            int cont = 0;
-            for (int i = 0; i < classeReal.size(); i++) {
-                if(!classeReal.get(i).equals(classePred.get(i))){
-                    cont++;
-                }
-            }
-            
-            double erro = (100 * cont)/unlabeled.numInstances();
-            
-            System.out.println(erro +"%");
-            
-            try {
-                Thread.sleep(400);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            
-            
-        }
-        
+
+        double erro = errosPropagadosUnlabeled(unlabeled);
+        new IOText().save(System.getProperty("user.dir").concat(File.separator),
+                "pctErroPropUnlab", String.valueOf(erro));
+
     }
-    
-    public static Classifier getClassificador(){
+
+    public static Classifier getClassificador() {
         return classifier;
     }
 
@@ -192,13 +172,15 @@ public class Learn {
             case "FilteredCollectiveClassifier":
                 moveFilesSVM_Grid(iteration, "FilteredCollectiveClassifier_results");
                 break;
+            case "RF":
+                moveFilesSVM_Grid(iteration, "RF_results");
+                break;
         }
         System.err.println("feito");
     }
 
     protected int verificaRaizesClassificadasErradas(Instances amostras, Classifier classificador) {
-        int contador = 0;
-        
+//        int contador = 0;
 //        //recupera os valores do att class das amostras
 //        Attribute atributosDasAmostras = amostras.classAttribute();
 //        Enumeration<Object> atributosAux = atributosDasAmostras.enumerateValues();
@@ -266,27 +248,27 @@ public class Learn {
 //
 //        System.exit(contador);
 
-        
-        
-        
-        
-        
+        int tamJaVerificadasAntes = jaVerificadas.size();
+
         try {
             for (int i = 0; i < amostras.numInstances(); i++) {
+
                 double pred = classificador.classifyInstance(amostras.instance(i));
                 String actual = amostras.classAttribute().value((int) amostras.instance(i).classValue());
                 String predicted = amostras.classAttribute().value((int) pred);
 
                 if (!actual.equals(predicted)) {
-                    contador++;
+                    jaVerificadas.add(amostras.instance(i));
                 }
+
             }
         } catch (Exception ex) {
             Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        
-        return contador;
+
+        int tamJaVerificadasDepois = jaVerificadas.size();
+
+        return (tamJaVerificadasDepois - tamJaVerificadasAntes);
     }
 
     protected int classesConhecidas(Instances amostras) {
@@ -458,6 +440,7 @@ public class Learn {
         Movimentacao.exec("cp", preSrc + "classesConhecidas.txt", dst);//
         Movimentacao.exec("cp", preSrc + "unlabeled.arff", dst);
         Movimentacao.exec("cp", preSrc + "tempoSelecao.txt", dst);//
+        Movimentacao.exec("cp", preSrc + "pctErroPropUnlab.txt", dst);//
 
         Movimentacao.exec("cp", preSrc + "amostrasDeFronteira.arff", dstFolderClassifier);
         Movimentacao.exec("cp", preSrc + "tempoAgrupamento.txt", dstFolderClassifier);
@@ -468,7 +451,7 @@ public class Learn {
         Movimentacao.exec("cp", preSrc + "splited".concat(File.separator).concat("teste.arff"), dst);
         Movimentacao.exec("cp", preSrc + "splited".concat(File.separator).concat("z2i.arff"), dst);
         Movimentacao.exec("cp", preSrc + "splited".concat(File.separator).concat("z2ii.arff"), dst);
-        
+
     }
 
     protected void moveFilesUniverSVM(int iteration) {
@@ -525,5 +508,31 @@ public class Learn {
                 break;
         }
         return ret;
+    }
+
+    private double errosPropagadosUnlabeled(Instances unlabeled) {
+        List<Double> classeReal = new ArrayList<>();
+        List<Double> classePred = new ArrayList<>();
+
+        for (int i = 0; i < unlabeled.numInstances(); i++) {
+            classeReal.add(unlabeled.instance(i).value(unlabeled.numAttributes() - 1));
+            try {
+                classePred.add(classifier.classifyInstance(unlabeled.instance(i)));
+
+            } catch (Exception ex) {
+                Logger.getLogger(Learn.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        int cont = 0;
+        for (int i = 0; i < classeReal.size(); i++) {
+            if (!classeReal.get(i).equals(classePred.get(i))) {
+                cont++;
+            }
+        }
+
+        double erro = (double) (100 * cont) / unlabeled.numInstances();
+
+        return erro;
     }
 }
